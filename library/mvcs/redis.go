@@ -17,8 +17,6 @@ const (
 type Redis struct {
 }
 
-var test2 RdsCollector
-
 type RdsCollector struct {
 	once    sync.Once
 	pointer *redis.Client
@@ -78,8 +76,4 @@ func (r *Redis) newClient(client *app.RedisClient) (*redis.Client, error) {
 		DB:       client.Db,
 	})
 	return rds, nil
-}
-
-func (r *Redis) GetCache() *redis.Client {
-	return r.NewClient(&test2, app.TestRedis)
 }

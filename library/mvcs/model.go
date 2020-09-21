@@ -24,8 +24,6 @@ type DbCollector struct {
 	pointer *gorm.DB
 }
 
-var test DbCollector
-
 func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB {
 	var (
 		err   error
@@ -90,8 +88,4 @@ func (m *Model) setDefaultConfig(db *gorm.DB) {
 	db.DB().SetMaxOpenConns(8)
 	db.DB().SetMaxIdleConns(2)
 	db.DB().SetConnMaxLifetime(time.Second * 30)
-}
-
-func (m *Model) GetTest() *gorm.DB {
-	return m.NewClient(&test, app.TestMysql)
 }

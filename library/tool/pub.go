@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	app "github.com/ZYallers/go-frame/gin/application"
+	app "github.com/ZYallers/zgin/application"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"

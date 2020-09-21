@@ -27,10 +27,10 @@
 package restful
 
 import (
-	v100Test "github.com/ZYallers/go-frame/gin/controller/v100/test"
-	"github.com/ZYallers/go-frame/gin/library/expvar"
-	"github.com/ZYallers/go-frame/gin/library/prometheus"
-	"github.com/ZYallers/go-frame/gin/library/swagger"
+	v100Test "github.com/ZYallers/zgin/controller/v100/test"
+	"github.com/ZYallers/zgin/library/expvar"
+	"github.com/ZYallers/zgin/library/prometheus"
+	"github.com/ZYallers/zgin/library/swagger"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

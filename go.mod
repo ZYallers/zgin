@@ -1,4 +1,4 @@
-module github.com/ZYallers/go-frame/gin
+module github.com/ZYallers/zgin
 
 go 1.12
 

@@ -3,8 +3,8 @@ package mvcs
 import (
 	"errors"
 	"fmt"
-	app "github.com/ZYallers/go-frame/gin/application"
-	"github.com/ZYallers/go-frame/gin/library/tool"
+	app "github.com/ZYallers/zgin/application"
+	"github.com/ZYallers/zgin/library/tool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"sync"

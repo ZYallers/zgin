@@ -1,10 +1,10 @@
 package router
 
 import (
-	"github.com/ZYallers/go-frame/gin/library/logger"
-	"github.com/ZYallers/go-frame/gin/library/middleware"
-	"github.com/ZYallers/go-frame/gin/library/restful"
-	"github.com/ZYallers/go-frame/gin/library/tool"
+	"github.com/ZYallers/zgin/library/logger"
+	"github.com/ZYallers/zgin/library/middleware"
+	"github.com/ZYallers/zgin/library/restful"
+	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"

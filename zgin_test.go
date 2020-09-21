@@ -2,11 +2,11 @@ package gin
 
 import (
 	"flag"
-	app "github.com/ZYallers/go-frame/gin/application"
-	"github.com/ZYallers/go-frame/gin/library/logger"
-	"github.com/ZYallers/go-frame/gin/library/restful"
-	"github.com/ZYallers/go-frame/gin/library/router"
-	"github.com/ZYallers/go-frame/gin/library/tool"
+	app "github.com/ZYallers/zgin/application"
+	"github.com/ZYallers/zgin/library/logger"
+	"github.com/ZYallers/zgin/library/restful"
+	"github.com/ZYallers/zgin/library/router"
+	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"

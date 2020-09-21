@@ -2,7 +2,7 @@ package tool
 
 import (
 	"fmt"
-	"github.com/ZYallers/go-frame/gin/library/logger"
+	"github.com/ZYallers/zgin/library/logger"
 	"go.uber.org/zap"
 	"reflect"
 	"runtime/debug"

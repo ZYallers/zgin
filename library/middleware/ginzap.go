@@ -3,8 +3,8 @@ package middleware
 import (
 	"bytes"
 	"fmt"
-	"github.com/ZYallers/go-frame/gin/library/logger"
-	"github.com/ZYallers/go-frame/gin/library/tool"
+	"github.com/ZYallers/zgin/library/logger"
+	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net"

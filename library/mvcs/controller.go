@@ -1,7 +1,7 @@
 package mvcs
 
 import (
-	app "github.com/ZYallers/go-frame/gin/application"
+	app "github.com/ZYallers/zgin/application"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"

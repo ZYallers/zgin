@@ -1,8 +1,8 @@
 package v100
 
 import (
-	"github.com/ZYallers/go-frame/gin/library/mvcs"
-	"github.com/ZYallers/go-frame/gin/library/tool"
+	"github.com/ZYallers/zgin/library/mvcs"
+	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

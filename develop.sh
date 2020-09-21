@@ -1,5 +1,6 @@
 #!/bin/bash
 
+appConfigFile="$(pwd)/src/application/app/base.go"
 name=""
 httpServerAddr=""
 logDir=""
@@ -41,27 +42,27 @@ helpFun(){
 }
 
 initFun(){
-    appfile="`pwd`/src/config/app.go"
-    if [[ ! -f "$appfile" ]];then
-        echoFun "file [$appfile] is not exist" err
+    appConfigFile="`pwd`/src/config/app.go"
+    if [[ ! -f "$appConfigFile" ]];then
+        echoFun "file [$appConfigFile] is not exist" err
         exit 1
     fi
 
-    name=`cat ${appfile}|grep "Name"|awk -F '"' '{print $2}'`
+    name=`cat ${appConfigFile}|grep "Name"|awk -F '"' '{print $2}'`
     if [[ "$name" == "" ]];then
         echoFun "name is null" err
         exit 1
     fi
     echoFun "name: $name" tip
 
-    httpServerAddr=`cat $appfile|grep "HttpServerDefaultAddr"|awk -F '"' '{print $2}'`
+    httpServerAddr=`cat ${appConfigFile}|grep "HttpServerDefaultAddr"|awk -F '"' '{print $2}'`
     if [[ "$httpServerAddr" == "" ]];then
         echoFun "httpServerAddr is empty" err
         exit 1
     fi
     echoFun "httpServerAddr: $httpServerAddr" tip
 
-    logDir=`cat ${appfile}|grep "LogDir"|awk -F '"' '{print $2}'`
+    logDir=`cat ${appConfigFile}|grep "LogDir"|awk -F '"' '{print $2}'`
     if [[ "$logDir" == "" ]];then
         echoFun "logDir is null" err
         exit 1

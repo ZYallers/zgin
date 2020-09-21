@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func Run() {
+func Run(restApi *restful.Rest) {
 	app.HttpServerAddr = flag.String("http.addr", app.HttpServerDefaultAddr, "服务监控地址，如：0.0.0.0:9010")
 	flag.Parse()
 
@@ -29,7 +29,7 @@ func Run() {
 	app.Engine = gin.New()
 	app.Logger = logger.AppLogger()
 
-	rou := router.NewRouter(app.Engine, app.Logger, app.DebugStack, restful.Api)
+	rou := router.NewRouter(app.Engine, app.Logger, app.DebugStack, restApi)
 	rou.GlobalMiddleware()
 	rou.GlobalHandlerRegister()
 

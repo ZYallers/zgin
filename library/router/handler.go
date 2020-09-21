@@ -19,8 +19,8 @@ type router struct {
 	debugStack bool
 }
 
-func NewRouter(engine *gin.Engine, logger *zap.Logger, debugStack bool, rest *restful.Rest) *router {
-	return &router{engine: engine, logger: logger, debugStack: debugStack, api: rest}
+func NewRouter(engine *gin.Engine, logger *zap.Logger, debugStack bool) *router {
+	return &router{engine: engine, logger: logger, debugStack: debugStack}
 }
 
 func (r *router) RegisterRestApi(rest *restful.Rest) *router {
@@ -28,11 +28,18 @@ func (r *router) RegisterRestApi(rest *restful.Rest) *router {
 	return r
 }
 
-func (r *router) GlobalMiddleware() {
+func (r *router) GlobalMiddleware() *router {
 	r.engine.Use(
 		middleware.RecoveryWithZap(r.logger, r.debugStack),
 		middleware.Dispatch(r.engine, r.api),
 	)
+	return r
+}
+
+func (r *router) GlobalHandlerRegister() *router {
+	r.noRouteHandlerRegister()
+	r.versionHandlerRegister(middleware.LoggerWithZap(r.logger))
+	return r
 }
 
 // adds handlers for NoRoute. It return a 404 code by default.
@@ -73,9 +80,4 @@ func (r *router) versionHandlerRegister(handlers ...gin.HandlerFunc) {
 			}
 		}
 	}
-}
-
-func (r *router) GlobalHandlerRegister() {
-	r.noRouteHandlerRegister()
-	r.versionHandlerRegister(middleware.LoggerWithZap(r.logger))
 }

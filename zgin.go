@@ -8,17 +8,22 @@ import (
 	"github.com/ZYallers/zgin/library/router"
 	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"net/http"
 	"os"
 	"time"
 )
 
-func Run(restApi *restful.Rest) {
+const (
+	developMode = `development`
+)
+
+func EnvInit() {
 	app.HttpServerAddr = flag.String("http.addr", app.HttpServerDefaultAddr, "服务监控地址，如：0.0.0.0:9010")
 	flag.Parse()
 
 	app.RobotEnable = true
-	if os.Getenv("hxsenv") == "development" {
+	if os.Getenv("hxsenv") == developMode {
 		app.DebugStack = true
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -28,17 +33,22 @@ func Run(restApi *restful.Rest) {
 	gin.DisableConsoleColor()
 	app.Engine = gin.New()
 	app.Logger = logger.AppLogger()
+}
 
-	rou := router.NewRouter(app.Engine, app.Logger, app.DebugStack, restApi)
-	rou.GlobalMiddleware()
-	rou.GlobalHandlerRegister()
+func SetRouter(restApi *restful.Rest, sessionClient *redis.Client) {
+	r := router.NewRouter(app.Engine, app.Logger, app.DebugStack)
+	if sessionClient != nil {
+		app.Session.Client = sessionClient
+	}
+	r.RegisterRestApi(restApi).GlobalMiddleware().GlobalHandlerRegister()
+}
 
+func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {
 	srv := &http.Server{
 		Addr:         *app.HttpServerAddr,
 		Handler:      app.Engine,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
 	}
-
-	tool.Graceful(srv, app.Logger, 10*time.Second)
+	tool.Graceful(srv, app.Logger, shutdownTimeout)
 }

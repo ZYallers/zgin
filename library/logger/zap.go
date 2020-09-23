@@ -5,52 +5,41 @@ import (
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
-var (
-	logDir        string
-	lumberLogger  *lumberjack.Logger
-	loggerCache   sync.Map
-	lumberCache   sync.Map
-	loggerCounter int32
-	levelEnabler  zap.LevelEnablerFunc
-	jsonEncoder   zapcore.Encoder
-)
-
 const (
-	// Unit: MB
-	fileMaxSize  = 100
+	fileMaxSize  = 100 // Unit: MB
 	maxBackups   = 20
-	fileSuffix   = ".log"
+	fileSuffix   = `.log`
 	cacheMaxSize = 100
 )
 
-func init() {
-	logDir = app.LogDir
-	if err := mkLogDir(logDir); err != nil {
-		panic(err)
-	}
-	levelEnabler = func(lvl zapcore.Level) bool {
+var (
+	logDir                   = app.LogDir
+	loggerCache, lumberCache sync.Map
+	loggerCounter            int32
+	levelEnabler             zap.LevelEnablerFunc = func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.DebugLevel
 	}
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Format("2006/01/02 15:04:05.000"))
-	}
-	jsonEncoder = zapcore.NewJSONEncoder(encoderConfig)
-	lumberLogger = &lumberjack.Logger{MaxSize: fileMaxSize, MaxBackups: maxBackups, LocalTime: true, Compress: false}
-}
-
-func mkLogDir(dir string) error {
-	if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
-		return os.MkdirAll(dir, 0777)
-	}
-	return nil
-}
+	jsonEncoder = zapcore.NewJSONEncoder(zapcore.EncoderConfig{
+		TimeKey:       "ts",
+		LevelKey:      "level",
+		NameKey:       "logger",
+		CallerKey:     "caller",
+		MessageKey:    "msg",
+		StacktraceKey: "stacktrace",
+		LineEnding:    zapcore.DefaultLineEnding,
+		EncodeLevel:   zapcore.LowercaseLevelEncoder,
+		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.Format("2006/01/02 15:04:05.000"))
+		},
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	})
+)
 
 func AppLogger() *zap.Logger {
 	file := logDir + "/" + app.Name + fileSuffix
@@ -97,9 +86,8 @@ func Use(filename string) *zap.Logger {
 }
 
 func newLogger(filename string) (*zap.Logger, *lumberjack.Logger) {
-	hook := *lumberLogger
-	hook.Filename = filename
-	logger := zap.New(zapcore.NewCore(jsonEncoder, zapcore.AddSync(&hook), levelEnabler))
+	hook := &lumberjack.Logger{MaxSize: fileMaxSize, MaxBackups: maxBackups, LocalTime: true, Compress: false, Filename: filename}
+	logger := zap.New(zapcore.NewCore(jsonEncoder, zapcore.AddSync(hook), levelEnabler))
 	logger.Info("new logger succeed", zap.String("filename", hook.Filename))
-	return logger, &hook
+	return logger, hook
 }

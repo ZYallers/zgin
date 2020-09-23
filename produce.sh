@@ -173,11 +173,16 @@ reloadFun(){
         exit 1
     fi
 
+    # 日志目录
+    if [[ ! -d "$logDir" ]];then
+        mkdir -p ${logDir}
+    fi
     if [[ ! -d "$logDir" ]];then
         echoFun "logDir [$logDir] is not exist" err
         exit 1
     fi
 
+    # 日志文件
     logfile=${logDir}/${name}.log
     if [[ ! -f "$logfile" ]];then
         touch ${logfile}

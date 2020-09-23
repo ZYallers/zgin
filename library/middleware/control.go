@@ -20,7 +20,9 @@ func Dispatch(ege *gin.Engine, rest *restful.Rest) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if regexp.MustCompile(`^\/v[0-9]{3,6}\/.*$`).MatchString(ctx.Request.URL.Path) {
 			var handler *restful.RestHandler
-			if handler, _ = versionCompare(strings.Join(strings.Split(ctx.Request.URL.Path, `/`)[2:], `/`), ctx, *rest); handler == nil {
+			firstIndex := strings.Index(ctx.Request.URL.Path[1:], `/`) + 2
+			router := ctx.Request.URL.Path[firstIndex:]
+			if handler, _ = versionCompare(router, ctx, rest); handler == nil {
 				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "msg": "bad request exception"})
 				return
 			}
@@ -44,8 +46,8 @@ func Dispatch(ege *gin.Engine, rest *restful.Rest) gin.HandlerFunc {
 			go regenSessionData(ctx.Copy())
 		} else {
 			// 版本验证
-			if handler, version := versionCompare(ctx.Request.URL.Path[1:], ctx, *rest); handler != nil {
-				ctx.Request.URL.Path = "/v" + strings.Join(strings.Split(version, "."), "") + ctx.Request.URL.Path
+			if handler, version := versionCompare(ctx.Request.URL.Path[1:], ctx, rest); handler != nil {
+				ctx.Request.URL.Path = `/v` + strings.Replace(version, `.`, ``, 2) + ctx.Request.URL.Path
 				ege.HandleContext(ctx)
 				ctx.Abort()
 			} else {
@@ -73,8 +75,8 @@ func queryPostForm(ctx *gin.Context, keys ...string) string {
 }
 
 // versionCompare
-func versionCompare(restful string, ctx *gin.Context, rest restful.Rest) (*restful.RestHandler, string) {
-	if handlers, ok := rest[restful]; ok {
+func versionCompare(restful string, ctx *gin.Context, rest *restful.Rest) (*restful.RestHandler, string) {
+	if handlers, ok := (*rest)[restful]; ok {
 		version := queryPostForm(ctx, "app_version", app.Version)
 		for _, handler := range handlers {
 			if _, ok := handler.Method[ctx.Request.Method]; ok {

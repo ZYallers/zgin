@@ -7,17 +7,11 @@ import (
 	"net/http"
 )
 
-type index struct {
+type Index struct {
 	mvcs.Controller
 }
 
-func Index(ctx *gin.Context) *index {
-	i := &index{}
-	i.Ctx = ctx
-	return i
-}
-
-func (i *index) CheckOk() {
+func (i *Index) CheckOk() {
 	i.Json(http.StatusOK, "ok", gin.H{
 		"mode":        gin.Mode(),
 		"public_ip":   tool.PublicIP(),

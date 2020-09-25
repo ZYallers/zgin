@@ -1,6 +1,7 @@
 package zgin
 
 import (
+	app "github.com/ZYallers/zgin/application"
 	"github.com/ZYallers/zgin/library/restful"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 
 func TestRun(t *testing.T) {
 	EnvInit()
-	SetRouter(restful.Api, nil)
-	ListenAndServe(5*time.Second, 10*time.Second, 10*time.Second)
+	SessionClientRegister(nil)
+	MiddlewareRegister(restful.Api)
+	ListenAndServe(10*time.Second, 15*time.Second, app.HttpServerShutDownTimeout)
 }

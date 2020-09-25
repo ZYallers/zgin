@@ -4,8 +4,8 @@ import (
 	"flag"
 	app "github.com/ZYallers/zgin/application"
 	"github.com/ZYallers/zgin/library/logger"
+	"github.com/ZYallers/zgin/library/middleware"
 	"github.com/ZYallers/zgin/library/restful"
-	"github.com/ZYallers/zgin/library/router"
 	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -24,8 +24,8 @@ func EnvInit() {
 
 	app.RobotEnable = true
 	if os.Getenv("hxsenv") == developMode {
-		app.DebugStack = true
 		gin.SetMode(gin.DebugMode)
+		app.SignTimeExpiration = 3600 // 测试环境utime有效期延长到1小时
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -35,12 +35,22 @@ func EnvInit() {
 	app.Logger = logger.AppLogger()
 }
 
-func SetRouter(restApi *restful.Rest, sessionClient *redis.Client) {
-	r := router.NewRouter(app.Engine, app.Logger, app.DebugStack)
-	if sessionClient != nil {
-		app.Session.Client = sessionClient
+func SessionClientRegister(cli *redis.Client) {
+	if cli != nil {
+		app.Session.Client = cli
 	}
-	r.RegisterRestApi(restApi).GlobalMiddleware().GlobalHandlerRegister()
+}
+
+func MiddlewareRegister(restApi *restful.Rest) {
+	md := []gin.HandlerFunc{
+		middleware.RecoveryWithZap(app.Logger),
+		middleware.LoggerWithZap(app.Logger),
+		middleware.AuthCheck(restApi),
+	}
+	if app.Session.Client != nil {
+		md = append(md, middleware.RegenSessionData())
+	}
+	app.Engine.Use(md...)
 }
 
 func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {

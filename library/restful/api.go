@@ -31,14 +31,16 @@ import (
 	"github.com/ZYallers/zgin/library/expvar"
 	"github.com/ZYallers/zgin/library/prometheus"
 	"github.com/ZYallers/zgin/library/swagger"
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
+const (
+	httpGet = http.MethodGet
+)
+
 var Api = &Rest{
-	// v1.0.0
-	"expvar":    {{Version: "1.0.0+", Method: map[string]byte{http.MethodGet: 1}, Handler: expvar.RunningStatsHandler}},
-	"metrics":   {{Version: "1.0.0+", Method: map[string]byte{http.MethodGet: 1}, Handler: prometheus.ServerHandler}},
-	"swag/json": {{Version: "1.0.0+", Method: map[string]byte{http.MethodGet: 1}, Handler: swagger.DocsHandler}},
-	"test/isok": {{Version: "1.0.0+", Method: map[string]byte{http.MethodGet: 1}, Handler: func(c *gin.Context) { v100Test.Index(c).CheckOk() }}},
+	"expvar":    {{Method: Mt{httpGet: 1}, Handler: expvar.RunningStatsHandler}},
+	"metrics":   {{Method: Mt{httpGet: 1}, Handler: prometheus.ServerHandler}},
+	"swag/json": {{Method: Mt{httpGet: 1}, Handler: swagger.DocsHandler}},
+	"test/isok": {{Method: Mt{httpGet: 1}, Signed: true, Logged: true, Handler: Fn(&v100Test.Index{}, "CheckOk")}},
 }

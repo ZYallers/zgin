@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"fmt"
+	app "github.com/ZYallers/zgin/application"
 	"github.com/ZYallers/zgin/library/logger"
 	"github.com/ZYallers/zgin/library/tool"
 	"github.com/gin-gonic/gin"
@@ -14,12 +15,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
-)
-
-const (
-	logMaxSecond = 3 * time.Second
-	msgMaxSecond = 5 * time.Second
-	reqStrKey    = `gin-gonic/gin/reqstr`
 )
 
 // LoggerWithZap returns a gin.HandlerFunc (middleware) that logs requests using uber-go/zap.
@@ -37,7 +32,7 @@ func LoggerWithZap(zl *zap.Logger) gin.HandlerFunc {
 					tool.PushContextMessage(ctx, err, reqStr, "", true)
 				}
 			}
-			if runtime >= logMaxSecond {
+			if runtime >= app.LogMaxTimeout {
 				logger.Use("timeout").Info(ctx.Request.URL.Path,
 					zap.Duration("runtime", runtime),
 					zap.String("proto", ctx.Request.Proto),
@@ -50,9 +45,9 @@ func LoggerWithZap(zl *zap.Logger) gin.HandlerFunc {
 					zap.String("request", ctx.GetString(reqStrKey)),
 				)
 			}
-			if runtime > msgMaxSecond {
+			if runtime > app.SendMaxTimeout {
 				msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit",
-					strings.TrimLeft(ctx.Request.URL.Path, "/"), runtime, msgMaxSecond)
+					strings.TrimLeft(ctx.Request.URL.Path, "/"), runtime, app.SendMaxTimeout)
 				tool.PushContextMessage(ctx, msg, ctx.GetString(reqStrKey), "", false)
 			}
 		}(ctx.Copy(), time.Now().Sub(start))
@@ -62,9 +57,7 @@ func LoggerWithZap(zl *zap.Logger) gin.HandlerFunc {
 // RecoveryWithZap returns a gin.HandlerFunc (middleware)
 // that recovers from any panics and logs requests using uber-go/zap.
 // All errors are logged using zap.Error().
-// stack means whether output the stack info.
-// The stack info is easy to find where the error occurs but the stack info is too large.
-func RecoveryWithZap(zl *zap.Logger, stack bool) gin.HandlerFunc {
+func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -92,13 +85,16 @@ func RecoveryWithZap(zl *zap.Logger, stack bool) gin.HandlerFunc {
 					return
 				}
 
-				if stack {
+				if gin.IsDebugging() {
 					var buf bytes.Buffer
 					ctx.Header("Content-Type", "text/html;charset=utf-8")
-					buf.WriteString(`<pre style="font-family:Consolas,Menlo,monospace;line-height:1.5em;font-size:12px">`)
-					buf.WriteString("<h1>" + errMsg + "</h1><h2>stack: </h2><p>")
+					buf.WriteString(`<pre style="font-family:Consolas,Menlo;line-height:1.5em;font-size:12px"><h1>`)
+					buf.WriteString(errMsg)
+					buf.WriteString(`</h1><h2>stack: </h2><p>`)
 					buf.WriteString(stacks)
-					buf.WriteString("</p><h2>request: </h2><p>" + reqStr + "</p></pre>")
+					buf.WriteString(`</p><h2>request: </h2><p>`)
+					buf.WriteString(reqStr)
+					buf.WriteString(`</p></pre>`)
 					ctx.String(http.StatusInternalServerError, buf.String())
 					ctx.Abort()
 				} else {

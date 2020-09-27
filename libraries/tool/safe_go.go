@@ -2,7 +2,7 @@ package tool
 
 import (
 	"fmt"
-	"github.com/ZYallers/zgin/library/logger"
+	"github.com/ZYallers/zgin/libraries/logger"
 	"go.uber.org/zap"
 	"reflect"
 	"runtime/debug"

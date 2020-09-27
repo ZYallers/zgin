@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	app "github.com/ZYallers/zgin/application"
-	"github.com/ZYallers/zgin/library/tool"
+	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
 	"time"
 )

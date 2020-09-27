@@ -1,7 +1,7 @@
 package logger
 
 import (
-	app "github.com/ZYallers/zgin/application"
+	"github.com/ZYallers/zgin/app"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

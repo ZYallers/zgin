@@ -3,8 +3,8 @@ package mvcs
 import (
 	"errors"
 	"fmt"
-	app "github.com/ZYallers/zgin/application"
-	"github.com/ZYallers/zgin/library/tool"
+	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/go-redis/redis"
 	"sync"
 	"time"

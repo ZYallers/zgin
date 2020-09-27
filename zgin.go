@@ -2,11 +2,10 @@ package zgin
 
 import (
 	"flag"
-	app "github.com/ZYallers/zgin/application"
-	"github.com/ZYallers/zgin/library/logger"
-	"github.com/ZYallers/zgin/library/middleware"
-	"github.com/ZYallers/zgin/library/restful"
-	"github.com/ZYallers/zgin/library/tool"
+	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/logger"
+	"github.com/ZYallers/zgin/libraries/middleware"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"net/http"
@@ -41,7 +40,7 @@ func SessionClientRegister(cli *redis.Client) {
 	}
 }
 
-func MiddlewareRegister(restApi *restful.Rest) {
+func MiddlewareRegister(restApi *app.Restful) {
 	md := []gin.HandlerFunc{
 		middleware.RecoveryWithZap(app.Logger),
 		middleware.LoggerWithZap(app.Logger),

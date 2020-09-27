@@ -1,7 +1,7 @@
 package mvcs
 
 import (
-	app "github.com/ZYallers/zgin/application"
+	"github.com/ZYallers/zgin/app"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"

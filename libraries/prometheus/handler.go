@@ -1,7 +1,7 @@
 package prometheus
 
 import (
-	app "github.com/ZYallers/zgin/application"
+	"github.com/ZYallers/zgin/app"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

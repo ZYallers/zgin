@@ -4,10 +4,9 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	app "github.com/ZYallers/zgin/application"
-	"github.com/ZYallers/zgin/library/logger"
-	"github.com/ZYallers/zgin/library/restful"
-	"github.com/ZYallers/zgin/library/tool"
+	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/logger"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
 	"go.uber.org/zap"
@@ -17,9 +16,9 @@ import (
 	"time"
 )
 
-func AuthCheck(api *restful.Rest) gin.HandlerFunc {
+func AuthCheck(api *app.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var handler *restful.RestHandler
+		var handler *app.RtHd
 		if handler = versionCompare(ctx, api); handler == nil {
 			//page404Handler(ctx)
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
@@ -95,10 +94,10 @@ func AuthCheck(api *restful.Rest) gin.HandlerFunc {
 }
 
 // versionCompare
-func versionCompare(ctx *gin.Context, api *restful.Rest) *restful.RestHandler {
+func versionCompare(ctx *gin.Context, api *app.Restful) *app.RtHd {
 	var (
 		exist    bool
-		handlers []restful.RestHandler
+		handlers []app.RtHd
 	)
 	if handlers, exist = (*api)[ctx.Request.URL.Path[1:]]; !exist {
 		return nil

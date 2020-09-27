@@ -2,7 +2,7 @@ package swagger
 
 import (
 	"fmt"
-	"github.com/ZYallers/zgin/library/tool"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"

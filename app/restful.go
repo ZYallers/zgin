@@ -1,22 +1,22 @@
-package restful
+package app
 
 import (
 	"github.com/gin-gonic/gin"
 	"reflect"
 )
 
-type Rest map[string][]RestHandler
+type Restful map[string][]RtHd
 
-type Mt map[string]byte
+type RtMd map[string]byte
 
-type RestHandler struct {
+type RtHd struct {
 	Version                string
-	Method                 Mt
+	Method                 RtMd
 	Handler                gin.HandlerFunc
 	Signed, Logged, ParAck bool
 }
 
-func Fn(cont interface{}, methodName string) gin.HandlerFunc {
+func RtFn(cont interface{}, methodName string) gin.HandlerFunc {
 	valueOf := reflect.ValueOf(cont)
 	parentValueOf := valueOf.Elem().FieldByName("Controller")
 	return func(ctx *gin.Context) {

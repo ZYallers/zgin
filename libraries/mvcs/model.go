@@ -3,8 +3,8 @@ package mvcs
 import (
 	"errors"
 	"fmt"
-	app "github.com/ZYallers/zgin/application"
-	"github.com/ZYallers/zgin/library/tool"
+	app "github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"sync"

@@ -6,25 +6,22 @@ import (
 	"github.com/ZYallers/zgin/libraries/expvar"
 	"github.com/ZYallers/zgin/libraries/prometheus"
 	"github.com/ZYallers/zgin/libraries/swagger"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"testing"
 	"time"
 )
 
-const (
-	hGet = http.MethodGet
-)
-
 var Api = &app.Restful{
-	"expvar":    {{Method: app.RtMd{hGet: 1}, Handler: expvar.RunningStatsHandler}},
-	"metrics":   {{Method: app.RtMd{hGet: 1}, Handler: prometheus.ServerHandler}},
-	"swag/json": {{Method: app.RtMd{hGet: 1}, Handler: swagger.DocsHandler}},
-	"test/isok": {{Method: app.RtMd{hGet: 1}, Handler: app.RtFn(&v000T.Index{}, "CheckOk")}},
+	"expvar":    {{Method: map[string]byte{http.MethodGet: 1}, Handler: expvar.RunningStatsHandler}},
+	"metrics":   {{Method: map[string]byte{http.MethodGet: 1}, Handler: prometheus.ServerHandler}},
+	"swag/json": {{Method: map[string]byte{http.MethodGet: 1}, Handler: swagger.DocsHandler}},
+	"test/isok": {{Method: map[string]byte{http.MethodGet: 1}, Handler: func(c *gin.Context) { v000T.Index(c).CheckOk() }}},
 }
 
 func TestRun(t *testing.T) {
 	EnvInit()
-	SessionClientRegister(nil)
+	//SessionClientRegister(nil)
 	MiddlewareRegister(Api)
 	ListenAndServe(10*time.Second, 15*time.Second, app.HttpServerShutDownTimeout)
 }

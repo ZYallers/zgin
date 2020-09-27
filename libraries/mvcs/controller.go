@@ -49,9 +49,11 @@ func (c *Controller) GetQueryPostForm(keys ...string) string {
 
 // 获取已登陆用户的ID
 func (c *Controller) GetLoggedUserId() int {
-	if val, ok := c.Ctx.Get(app.Session.LoggedUidKey); ok {
-		if str, ok := val.(string); ok {
-			if userId, err := strconv.Atoi(str); err == nil {
+	if data, ok := c.Ctx.Get(app.Session.DataKey); ok && data != nil {
+		vars := data.(map[string]interface{})
+		if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
+			if str, ok := userInfo["userid"].(string); ok && str != "" {
+				userId, _ := strconv.Atoi(str)
 				return userId
 			}
 		}

@@ -13,18 +13,13 @@ func RegenSessionData() gin.HandlerFunc {
 			return
 		}
 
-		var (
-			token string
-			vars  map[string]interface{}
-		)
-
-		if value, ok := ctx.Get(app.Session.TokenKey); !ok {
+		var token string
+		if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
 			return
-		} else {
-			token = value.(string)
 		}
 
-		if value, ok := ctx.Get(app.Session.DataKey); !ok {
+		var vars map[string]interface{}
+		if value, ok := ctx.Get(app.Session.DataKey); !ok || value == nil {
 			return
 		} else {
 			vars = value.(map[string]interface{})
@@ -48,26 +43,20 @@ func RegenSessionData() gin.HandlerFunc {
 	}
 }
 
-func sessionData(token string) (vars map[string]interface{}) {
+func sessionData(token string) map[string]interface{} {
 	if app.Session.Client == nil {
-		return
+		return nil
 	}
 	if str, _ := app.Session.Client.Get(`ci_session:` + token).Result(); str != "" {
-		vars = tool.PhpUnserialize(str)
+		return tool.PhpUnserialize(str)
 	}
-	return
+	return nil
 }
 
 func parseSessionToken(ctx *gin.Context) {
-	if token := queryPostForm(ctx, `sess_token`); token != "" {
-		ctx.Set(app.Session.TokenKey, token)
-		if vars := sessionData(token); len(vars) > 0 {
+	if token := queryPostForm(ctx, app.SessionTokenKey); token != "" {
+		if vars := sessionData(token); vars != nil {
 			ctx.Set(app.Session.DataKey, vars)
-			if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
-				if userId, ok := userInfo["userid"].(string); ok && userId != "" {
-					ctx.Set(app.Session.LoggedUidKey, userId)
-				}
-			}
 		}
 	}
 }

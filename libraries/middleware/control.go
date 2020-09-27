@@ -18,74 +18,27 @@ import (
 
 func AuthCheck(api *app.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var handler *app.RtHd
+		var handler *app.RestHandler
 		if handler = versionCompare(ctx, api); handler == nil {
-			//page404Handler(ctx)
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
 			return
 		}
 
-		cp := ctx.Copy()
-		errorChan, doneChan, checkNum := make(chan interface{}, 2), make(chan interface{}, 3), 3
-		defer func() {
-			tool.SafeCloseChan(errorChan)
-			tool.SafeCloseChan(doneChan)
-		}()
-
 		// 签名验证
-		go func(ctx *gin.Context) {
-			defer tool.SafeDefer()
-			if handler.Signed && !signCheck(ctx) {
-				tool.SafeSendChan(errorChan, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
-			} else {
-				tool.SafeSendChan(doneChan, 1)
-			}
-		}(cp)
-
-		// 登录验证
-		go func(ctx *gin.Context) {
-			defer tool.SafeDefer()
-			if handler.Logged && !loginCheck(ctx) {
-				tool.SafeSendChan(errorChan, gin.H{"code": http.StatusUnauthorized, "msg": "please log in and operate again"})
-			} else {
-				tool.SafeSendChan(doneChan, 1)
-			}
-		}(cp)
-
-		// token解析
-		go func(ctx *gin.Context) {
-			defer tool.SafeDefer()
-			if !handler.Logged && handler.ParAck {
-				parseSessionToken(ctx)
-			} else {
-				tool.SafeSendChan(doneChan, 1)
-			}
-		}(cp)
-
-		var errObj interface{}
-	LOOP:
-		for {
-			select {
-			case <-time.After(app.HttpServerWaitTimeout):
-				errObj = gin.H{"code": http.StatusGatewayTimeout, "msg": "server processing request timed out"}
-				break LOOP
-			case resp, ok := <-errorChan:
-				if ok && resp != nil {
-					errObj = resp
-					break LOOP
-				}
-			case resp, ok := <-doneChan:
-				if ok && resp.(int) == 1 {
-					if checkNum--; checkNum == 0 {
-						break LOOP
-					}
-				}
-			}
+		if handler.Signed && !signCheck(ctx) {
+			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
+			return
 		}
 
-		if errObj != nil {
-			ctx.AbortWithStatusJSON(http.StatusOK, errObj)
+		// 登录验证
+		if handler.Logged && !loginCheck(ctx) {
+			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please log in and operate again"})
 			return
+		}
+
+		// 解析sessionToken
+		if handler.ParAck && !handler.Logged {
+			parseSessionToken(ctx)
 		}
 
 		handler.Handler(ctx)
@@ -94,15 +47,15 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 }
 
 // versionCompare
-func versionCompare(ctx *gin.Context, api *app.Restful) *app.RtHd {
+func versionCompare(ctx *gin.Context, api *app.Restful) *app.RestHandler {
 	var (
 		exist    bool
-		handlers []app.RtHd
+		handlers []app.RestHandler
 	)
 	if handlers, exist = (*api)[ctx.Request.URL.Path[1:]]; !exist {
 		return nil
 	}
-	version, method := queryPostForm(ctx, `app_version`, app.Version), ctx.Request.Method
+	version, method := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
 	for _, handler := range handlers {
 		if _, ok := handler.Method[method]; ok {
 			if handler.Version == `` || version == handler.Version {
@@ -153,28 +106,21 @@ func signCheck(ctx *gin.Context) bool {
 }
 
 // loginCheck
-func loginCheck(ctx *gin.Context) (pass bool) {
+func loginCheck(ctx *gin.Context) bool {
 	var token string
-	if token = queryPostForm(ctx, "sess_token"); token == "" {
-		return
+	if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
+		return false
 	}
-	ctx.Set(app.Session.TokenKey, token)
-	if vars := sessionData(token); len(vars) > 0 {
+	if vars := sessionData(token); vars != nil {
 		ctx.Set(app.Session.DataKey, vars)
-		if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
-			if userId, ok := userInfo["userid"].(string); ok && userId != "" {
-				ctx.Set(app.Session.LoggedUidKey, userId)
-				pass = true
-			}
-		}
+		return true
 	}
-	return
+	return false
 }
 
 // page404Handler
 func page404Handler(ctx *gin.Context) {
 	go func(ctx *gin.Context) {
-		tool.SafeDefer()
 		reqStr := ctx.GetString(reqStrKey)
 		path := ctx.Request.URL.Path
 		logger.Use("404").Info(path,

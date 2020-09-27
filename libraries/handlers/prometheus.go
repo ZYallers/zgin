@@ -1,4 +1,4 @@
-package prometheus
+package handlers
 
 import (
 	"github.com/ZYallers/zgin/app"
@@ -25,6 +25,6 @@ func init() {
 	appInfo.WithLabelValues(app.Name, strings.Join(os.Args, " ")).Inc()
 }
 
-func ServerHandler(ctx *gin.Context) {
+func PromHandler(ctx *gin.Context) {
 	prom.ServeHTTP(ctx.Writer, ctx.Request)
 }

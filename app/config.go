@@ -25,6 +25,8 @@ var (
 	DevModeSign                     = "hxs-gin-dev"
 	LogMaxTimeout                   = 3 * time.Second
 	SendMaxTimeout                  = 5 * time.Second
-	HttpServerShutDownTimeout       = 15 * time.Second
 	HttpServerWaitTimeout           = 10 * time.Second
+	HttpServerReadTimeout           = 5 * time.Second
+	HttpServerWriteTimeout          = 15 * time.Second
+	HttpServerShutDownTimeout       = 15 * time.Second
 )

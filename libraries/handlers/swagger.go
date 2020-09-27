@@ -1,4 +1,4 @@
-package swagger
+package handlers
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func DocsHandler(ctx *gin.Context) {
+func SwagHandler(ctx *gin.Context) {
 	// 生产环境不注册
 	if !gin.IsDebugging() {
 		return

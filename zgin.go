@@ -40,16 +40,16 @@ func SessionClientRegister(cli *redis.Client) {
 	}
 }
 
+func PProfWebRegister() {
+	middleware.PProfWebRegister(app.Engine)
+}
+
 func MiddlewareRegister(restApi *app.Restful) {
-	md := []gin.HandlerFunc{
+	app.Engine.Use(
 		middleware.RecoveryWithZap(app.Logger),
 		middleware.LoggerWithZap(app.Logger),
 		middleware.AuthCheck(restApi),
-	}
-	if app.Session.Client != nil {
-		md = append(md, middleware.RegenSessionData())
-	}
-	app.Engine.Use(md...)
+	)
 }
 
 func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {

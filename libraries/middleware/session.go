@@ -7,38 +7,38 @@ import (
 	"time"
 )
 
-func RegenSessionData() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		if app.Session.Client == nil {
-			return
-		}
+func regenSessionData(ctx *gin.Context) {
+	defer tool.SafeDefer()
 
-		var token string
-		if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
-			return
-		}
+	if app.Session.Client == nil {
+		return
+	}
 
-		var vars map[string]interface{}
-		if value, ok := ctx.Get(app.Session.DataKey); !ok || value == nil {
-			return
-		} else {
-			vars = value.(map[string]interface{})
-		}
+	var token string
+	if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
+		return
+	}
 
-		now := time.Now()
-		if lastRegen, ok := vars["__ci_last_regenerate"].(int); ok {
-			if now.After(time.Unix(int64(lastRegen), 0).Add(app.Session.UpdateDuration)) {
-				vars["__ci_last_regenerate"] = now.Unix()
-				newCiVars := make(map[string]interface{}, 10)
-				if ciVars, ok := vars["__ci_vars"].(map[string]interface{}); ok {
-					for k := range ciVars {
-						newCiVars[k] = now.Unix() + app.Session.Expiration
-					}
-					vars["__ci_vars"] = newCiVars
+	var vars map[string]interface{}
+	if value, ok := ctx.Get(app.Session.DataKey); !ok || value == nil {
+		return
+	} else {
+		vars = value.(map[string]interface{})
+	}
+
+	now := time.Now()
+	if lastRegen, ok := vars["__ci_last_regenerate"].(int); ok {
+		if now.After(time.Unix(int64(lastRegen), 0).Add(app.Session.UpdateDuration)) {
+			vars["__ci_last_regenerate"] = now.Unix()
+			newCiVars := make(map[string]interface{}, 10)
+			if ciVars, ok := vars["__ci_vars"].(map[string]interface{}); ok {
+				for k := range ciVars {
+					newCiVars[k] = now.Unix() + app.Session.Expiration
 				}
-				app.Session.Client.Set(`ci_session:`+token, tool.PhpSerialize(vars),
-					time.Duration(app.Session.Expiration)*time.Second)
+				vars["__ci_vars"] = newCiVars
 			}
+			app.Session.Client.Set(`ci_session:`+token, tool.PhpSerialize(vars),
+				time.Duration(app.Session.Expiration)*time.Second)
 		}
 	}
 }

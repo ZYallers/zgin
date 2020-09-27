@@ -1,4 +1,4 @@
-package expvar
+package handlers
 
 import (
 	"encoding/json"
@@ -91,7 +91,7 @@ func sizeFormat(b uint64) string {
 }
 
 // 返回当前运行信息
-func RunningStatsHandler(ctx *gin.Context) {
+func ExpHandler(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Content-Type", "application/json;charset=utf-8")
 	first := true
 	report := func(key string, value interface{}) {

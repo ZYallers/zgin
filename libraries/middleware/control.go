@@ -42,7 +42,7 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		}
 
 		handler.Handler(ctx)
-		ctx.Abort()
+		go regenSessionData(ctx.Copy())
 	}
 }
 

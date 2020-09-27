@@ -1,6 +1,6 @@
 #!/bin/bash
 
-appConfigFile="$(pwd)/src/application/app/base.go"
+appConfigFile="$(pwd)/src/config/app/base.go"
 name=""
 httpServerAddr=""
 logDir=""

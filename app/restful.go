@@ -16,11 +16,11 @@ type RtHd struct {
 	Signed, Logged, ParAck bool
 }
 
-func RtFn(cont interface{}, methodName string) gin.HandlerFunc {
-	valueOf := reflect.ValueOf(cont)
-	parentValueOf := valueOf.Elem().FieldByName("Controller")
+func RtFn(controller interface{}, method string) gin.HandlerFunc {
+	valueOf := reflect.ValueOf(controller)
+	context := valueOf.Elem().FieldByName("Controller").FieldByName("Ctx")
 	return func(ctx *gin.Context) {
-		parentValueOf.FieldByName("Ctx").Set(reflect.ValueOf(ctx))
-		valueOf.MethodByName(methodName).Call(nil)
+		context.Set(reflect.ValueOf(ctx))
+		valueOf.MethodByName(method).Call(nil)
 	}
 }

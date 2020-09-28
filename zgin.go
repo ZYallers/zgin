@@ -42,9 +42,7 @@ func SessionClientRegister(cli *redis.Client) {
 }
 
 func PProfRegister() {
-	if gin.IsDebugging() {
-		handlers.PProfRegister(app.Engine)
-	}
+	handlers.PProfRegister(app.Engine)
 }
 
 func ExpVarRegister() {
@@ -56,9 +54,7 @@ func PrometheusRegister() {
 }
 
 func SwaggerRegister() {
-	if gin.IsDebugging() {
-		app.Engine.GET("/swag/json", handlers.SwagHandler)
-	}
+	app.Engine.GET("/swag/json", handlers.SwagHandler)
 }
 
 func MiddlewareGlobalRegister() {

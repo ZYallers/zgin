@@ -45,9 +45,9 @@ func LoggerWithZap(zl *zap.Logger) gin.HandlerFunc {
 					zap.String("request", ctx.GetString(reqStrKey)),
 				)
 			}
-			if runtime > app.SendMaxTimeout {
+			if runtime >= app.SendMaxTimeout {
 				msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit",
-					strings.TrimLeft(ctx.Request.URL.Path, "/"), runtime, app.SendMaxTimeout)
+					ctx.Request.URL.Path, runtime, app.SendMaxTimeout)
 				tool.PushContextMessage(ctx, msg, ctx.GetString(reqStrKey), "", false)
 			}
 		}(ctx.Copy(), time.Now().Sub(start))
@@ -80,7 +80,7 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 				if brokenPipe {
 					zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
 					// If the connection is dead, we can't write a status to it.
-					_ = ctx.Error(err.(error)) // nolint: errcheck
+					_ = ctx.Error(err.(error)) // nolint: errorcheck
 					ctx.Abort()
 					return
 				}
@@ -99,7 +99,8 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 					ctx.Abort()
 				} else {
 					zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
-					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "msg": "server internal error"})
+					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+						"code": http.StatusInternalServerError, "msg": "server internal error"})
 				}
 			}
 		}()

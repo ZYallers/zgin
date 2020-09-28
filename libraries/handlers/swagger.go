@@ -10,10 +10,6 @@ import (
 )
 
 func SwagHandler(ctx *gin.Context) {
-	// 生产环境不注册
-	if !gin.IsDebugging() {
-		return
-	}
 	pwd, _ := os.Getwd()
 	filePath := fmt.Sprintf("%s/doc/swagger.json", pwd)
 	if !tool.FileIsExist(filePath) {

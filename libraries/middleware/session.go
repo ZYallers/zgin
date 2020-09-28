@@ -8,11 +8,11 @@ import (
 )
 
 func regenSessionData(ctx *gin.Context) {
-	defer tool.SafeDefer()
-
 	if app.Session.Client == nil {
 		return
 	}
+
+	defer tool.SafeDefer()
 
 	var token string
 	if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {

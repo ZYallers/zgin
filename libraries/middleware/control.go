@@ -32,7 +32,7 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 
 		// 登录验证
 		if handler.Logged && !loginCheck(ctx) {
-			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please log in and operate again"})
+			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
 
@@ -118,21 +118,20 @@ func loginCheck(ctx *gin.Context) bool {
 	return false
 }
 
-// page404Handler
-func page404Handler(ctx *gin.Context) {
-	go func(ctx *gin.Context) {
-		reqStr := ctx.GetString(reqStrKey)
-		path := ctx.Request.URL.Path
-		logger.Use("404").Info(path,
-			zap.String("proto", ctx.Request.Proto),
-			zap.String("method", ctx.Request.Method),
-			zap.String("host", ctx.Request.Host),
-			zap.String("url", ctx.Request.URL.String()),
-			zap.String("query", ctx.Request.URL.RawQuery),
-			zap.String("clientIP", tool.ClientIP(ctx.ClientIP())),
-			zap.Any("header", ctx.Request.Header),
-			zap.String("request", reqStr),
-		)
-		tool.PushContextMessage(ctx, strings.TrimLeft(path, "/")+" page not found", reqStr, "", false)
-	}(ctx.Copy())
+// push404Handler
+func push404Handler(ctx *gin.Context) {
+	defer tool.SafeDefer()
+	reqStr := ctx.GetString(reqStrKey)
+	path := ctx.Request.URL.Path
+	logger.Use("404").Info(path,
+		zap.String("proto", ctx.Request.Proto),
+		zap.String("method", ctx.Request.Method),
+		zap.String("host", ctx.Request.Host),
+		zap.String("url", ctx.Request.URL.String()),
+		zap.String("query", ctx.Request.URL.RawQuery),
+		zap.String("clientIP", tool.ClientIP(ctx.ClientIP())),
+		zap.Any("header", ctx.Request.Header),
+		zap.String("request", reqStr),
+	)
+	tool.PushContextMessage(ctx, strings.TrimLeft(path, "/")+" page not found", reqStr, "", false)
 }

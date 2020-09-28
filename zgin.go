@@ -3,6 +3,7 @@ package zgin
 import (
 	"flag"
 	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/libraries/handlers"
 	"github.com/ZYallers/zgin/libraries/logger"
 	"github.com/ZYallers/zgin/libraries/middleware"
 	"github.com/ZYallers/zgin/libraries/tool"
@@ -40,24 +41,35 @@ func SessionClientRegister(cli *redis.Client) {
 	}
 }
 
-func PProfWebRegister() {
-	middleware.PProfWebRegister(app.Engine)
+func PProfRegister() {
+	if gin.IsDebugging() {
+		handlers.PProfRegister(app.Engine)
+	}
 }
 
-func MiddlewareRegister(restApi *app.Restful) {
-	app.Engine.Use(
-		middleware.RecoveryWithZap(app.Logger),
-		middleware.LoggerWithZap(app.Logger),
-		middleware.AuthCheck(restApi),
-	)
+func ExpVarRegister() {
+	app.Engine.GET("/expvar", handlers.ExpHandler)
+}
+
+func PrometheusRegister() {
+	app.Engine.GET("/metrics", handlers.PromHandler)
+}
+
+func SwaggerRegister() {
+	if gin.IsDebugging() {
+		app.Engine.GET("/swag/json", handlers.SwagHandler)
+	}
+}
+
+func MiddlewareGlobalRegister() {
+	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
+}
+
+func MiddlewareCustomRegister(api *app.Restful) {
+	app.Engine.Use(middleware.AuthCheck(api))
 }
 
 func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {
-	srv := &http.Server{
-		Addr:         *app.HttpServerAddr,
-		Handler:      app.Engine,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
-	}
-	tool.Graceful(srv, app.Logger, shutdownTimeout)
+	tool.Graceful(&http.Server{Addr: *app.HttpServerAddr, Handler: app.Engine, ReadTimeout: readTimeout,
+		WriteTimeout: writeTimeout}, app.Logger, shutdownTimeout)
 }

@@ -24,7 +24,7 @@
 // @Author zhongyongbiao 2020/9/27 下午6:00
 // @Version 1.0.0
 // @Software GoLand
-package middleware
+package handlers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -48,7 +48,7 @@ func getPrefix(prefixOptions ...string) string {
 // Register the standard HandlerFuncs from the net/http/pprof package with
 // the provided gin.Engine. prefixOptions is a optional. If not prefixOptions,
 // the default path prefix is used, otherwise first prefixOptions will be path prefix.
-func PProfWebRegister(r *gin.Engine, prefixOptions ...string) {
+func PProfRegister(r *gin.Engine, prefixOptions ...string) {
 	RouteRegister(&(r.RouterGroup), prefixOptions...)
 }
 

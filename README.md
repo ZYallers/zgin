@@ -90,7 +90,7 @@ var Api = &app.Restful{
 ```
 
 ## License
-Released under the [MIT License](https://github.com/ZYallers/zgin/blob/master/License)
+Released under the [MIT License](https://github.com/ZYallers/zgin/blob/master/LICENSE)
 
 
 

@@ -1,10 +1,11 @@
 #!/bin/bash
 
 appConfigFile="$(pwd)/src/config/app/base.go"
+freshConfigFile="$(pwd)/src/fresh.conf"
+freshName=""
 name=""
 httpServerAddr=""
 logDir=""
-freshName=""
 
 echoFun(){
     str=$1
@@ -34,7 +35,6 @@ helpFun(){
     echoFun "    sync                                    同步服务vendor资源" tip
     echoFun "    restart                                 重启服务" tip
     echoFun "    stop                                    终止服务" tip
-    echoFun "    build_mcs                               构建mcs(mysql convert struct)工具" tip
     echoFun "    swag_init                               swag init(同步生成接口文档)" tip
     echoFun "    help                                    查看命令的帮助信息" tip
     echoFun "有关某个操作的详细信息，请使用 help 命令查看" tip
@@ -42,7 +42,6 @@ helpFun(){
 }
 
 initFun(){
-    appConfigFile="`pwd`/src/config/app.go"
     if [[ ! -f "$appConfigFile" ]];then
         echoFun "file [$appConfigFile] is not exist" err
         exit 1
@@ -69,7 +68,6 @@ initFun(){
     fi
     echoFun "logDir: $logDir" tip
 
-    freshConfigFile="`pwd`/src/fresh.conf"
     if [[ ! -f "$freshConfigFile" ]];then
         echoFun "fresh config file [$freshConfigFile] is not exist" err
         exit 1
@@ -93,29 +91,33 @@ statusFun(){
 syncFun(){
     initFun
 
-    cd ./src
-
     export GO111MODULE=on
     export GOPROXY=https://goproxy.cn
 
-    echoFun "get fresh:" title
+    echoFun "go get fresh:" title
     if [[ ! -f "../bin/$freshName" ]];then
-        mkdir -p ./github.com/gravityblast
-        cd ./github.com/gravityblast
-        git clone -b master https://github.com/gravityblast/fresh.git
-        cd ../../
-        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-w' -i -o ../bin/${freshName} ./github.com/gravityblast/fresh/main.go
-        if [[ ! -f "../bin/$freshName" ]];then
-            echoFun "build fresh failed" err
+        if [[ ! -f "$GOPATH/bin/fresh" ]];then
+            nowPwd="$(pwd)"
+            cd $GOPATH
+            go get -v github.com/pilu/fresh
+            if [[ ! -f "./bin/fresh" ]];then
+                echoFun "go get fresh command failed" err
+                exit 1
+            fi
+            cd ${nowPwd}
+        fi
+        cp -f $GOPATH/bin/fresh ./bin/${freshName}
+        if [[ ! -f "./bin/${freshName}" ]];then
+            echoFun "cp fresh failed" err
             exit 1
         fi
-        rm -rf ./github.com
-        echoFun "get fresh finished" ok
+        echoFun "go get fresh finished" ok
     else
-        echoFun "fresh is getted" tip
+        echoFun "fresh have got" tip
     fi
 
     echoFun "go mod vendor:" title
+    cd ./src
     if [[ ! -f "./go.mod" ]];then
         go mod init src
     fi
@@ -197,35 +199,11 @@ stopFun(){
     echoFun "stop finished" ok
 }
 
-buildMscFun(){
-    cd ./src
-    echoFun "pwd: $(pwd)" tip
-    CGO_ENABLED=0 go build -v -a -installsuffix cgo -ldflags '-w' -i -o ../bin/mcs_tmp ./library/tool/sql2stu/main.go
-
-    cd ../
-    if [[ ! -f "./bin/mcs_tmp" ]];then
-        echoFun "build tmp runner failed" err
-        exit 1
-    fi
-    mv -f ./bin/mcs_tmp ./bin/mcs
-    if [[ ! -f "./bin/mcs" ]];then
-        echoFun "mv tmp runner failed" err
-        exit 1
-    fi
-    if [[ ! -f "./bin/mcs" ]];then
-        echoFun "build mcs failed" err
-        exit 1
-    fi
-
-    chmod u+x ./bin/mcs
-    echoFun "build mcs finished" ok
-}
-
 swagInitFun() {
     cd ./src
     echoFun "pwd: $(pwd)" tip
 
-    ${GOPATH}/bin/swag init -d ./controller -g ../main.go -o ../doc
+    $GOPATH/bin/swag init -d ./controller -g ../main.go -o ../doc
 
     if [[ -f "../doc/docs.go" ]];then
         rm -f ../doc/docs.go
@@ -249,9 +227,6 @@ case $1 in
         ;;
         restart)
             restartFun
-        ;;
-        build_mcs)
-            buildMscFun
         ;;
         swag_init)
            swagInitFun

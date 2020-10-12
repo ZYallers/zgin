@@ -18,7 +18,6 @@ const (
 )
 
 var (
-	logDir                   = app.LogDir
 	loggerCache, lumberCache sync.Map
 	loggerCounter            int32
 	levelEnabler             zap.LevelEnablerFunc = func(lvl zapcore.Level) bool {
@@ -42,7 +41,7 @@ var (
 )
 
 func AppLogger() *zap.Logger {
-	file := logDir + "/" + app.Name + fileSuffix
+	file := app.LogDir + "/" + app.Name + fileSuffix
 	logger, _ := newLogger(file)
 	return logger
 }
@@ -52,7 +51,7 @@ func Use(filename string) *zap.Logger {
 		return nil
 	}
 
-	file := logDir + "/" + app.Name + "-" + filename + fileSuffix
+	file := app.LogDir + "/" + app.Name + "-" + filename + fileSuffix
 
 	// 判断是否已存在缓存中
 	if logger, ok := loggerCache.Load(file); ok {

@@ -14,8 +14,8 @@ type SessionConfig struct {
 }
 
 var Session = &SessionConfig{
-	TokenKey:       "gin-gonic/gin/sesstoken",
+	TokenKey:       "sess_token",
 	DataKey:        "gin-gonic/gin/sessdata",
-	UpdateDuration: 5 * time.Minute, // 5minutes
-	Expiration:     6 * 30 * 86400,  // 6months
+	UpdateDuration: 30 * time.Minute, // 30minutes
+	Expiration:     6 * 30 * 86400,   // 6months
 }

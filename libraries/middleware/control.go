@@ -37,9 +37,7 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		}
 
 		// 解析sessionToken
-		if handler.ParAck && !handler.Logged {
-			parseSessionToken(ctx)
-		}
+		parseSessionToken(ctx)
 
 		handler.Handler(ctx)
 		go regenSessionData(ctx.Copy())
@@ -107,12 +105,14 @@ func signCheck(ctx *gin.Context) bool {
 
 // loginCheck
 func loginCheck(ctx *gin.Context) bool {
+	if app.Session.Client == nil {
+		return false
+	}
 	var token string
-	if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
+	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
 		return false
 	}
 	if vars := sessionData(token); vars != nil {
-		ctx.Set(app.Session.DataKey, vars)
 		return true
 	}
 	return false

@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const tokenValKeyPrefix = "ci_session:"
+
 func regenSessionData(ctx *gin.Context) {
 	if app.Session.Client == nil {
 		return
@@ -15,7 +17,7 @@ func regenSessionData(ctx *gin.Context) {
 	defer tool.SafeDefer()
 
 	var token string
-	if token = queryPostForm(ctx, app.SessionTokenKey); token == "" {
+	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
 		return
 	}
 
@@ -37,7 +39,7 @@ func regenSessionData(ctx *gin.Context) {
 				}
 				vars["__ci_vars"] = newCiVars
 			}
-			app.Session.Client.Set(`ci_session:`+token, tool.PhpSerialize(vars),
+			app.Session.Client.Set(tokenValKeyPrefix+token, tool.PhpSerialize(vars),
 				time.Duration(app.Session.Expiration)*time.Second)
 		}
 	}
@@ -47,16 +49,21 @@ func sessionData(token string) map[string]interface{} {
 	if app.Session.Client == nil {
 		return nil
 	}
-	if str, _ := app.Session.Client.Get(`ci_session:` + token).Result(); str != "" {
+	if str, _ := app.Session.Client.Get(tokenValKeyPrefix + token).Result(); str != "" {
 		return tool.PhpUnserialize(str)
 	}
 	return nil
 }
 
 func parseSessionToken(ctx *gin.Context) {
-	if token := queryPostForm(ctx, app.SessionTokenKey); token != "" {
-		if vars := sessionData(token); vars != nil {
-			ctx.Set(app.Session.DataKey, vars)
-		}
+	if app.Session.Client == nil {
+		return
+	}
+	var token string
+	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
+		return
+	}
+	if vars := sessionData(token); vars != nil {
+		ctx.Set(app.Session.DataKey, vars)
 	}
 }

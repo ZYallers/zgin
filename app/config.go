@@ -10,13 +10,13 @@ var (
 	HttpServerAddr *string
 	Engine         *gin.Engine
 	Logger         *zap.Logger
-	RobotEnable    bool
 
-	Name                            = "zgin"
-	Version                         = "0.0.0"
-	VersionKey                      = "app_version"
-	HttpServerDefaultAddr           = "0.0.0.0:9010"
-	LogDir                          = "/apps/logs/go/zgin"
+	Name                  = "zgin"
+	Version               = "0.0.0"
+	VersionKey            = "app_version"
+	HttpServerDefaultAddr = "0.0.0.0:9010"
+	LogDir                = "/apps/logs/go/zgin"
+	
 	ErrorRobotToken                 = ""
 	GracefulRobotToken              = ""
 	TokenKey                        = ""

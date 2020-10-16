@@ -22,7 +22,6 @@ func EnvInit() {
 	app.HttpServerAddr = flag.String("http.addr", app.HttpServerDefaultAddr, "服务监控地址，如：0.0.0.0:9010")
 	flag.Parse()
 
-	app.RobotEnable = true
 	if os.Getenv("hxsenv") == developMode {
 		gin.SetMode(gin.DebugMode)
 		app.SignTimeExpiration = 3600 // 测试环境utime有效期延长到1小时

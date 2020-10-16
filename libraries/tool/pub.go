@@ -66,9 +66,6 @@ func StrFirstToLower(str string) string {
 
 // PushSimpleMessage
 func PushSimpleMessage(msg string, isAtAll bool) {
-	if !app.RobotEnable {
-		return
-	}
 	host, _ := os.Hostname()
 	text := []string{
 		msg + "\n---------------------------",
@@ -79,6 +76,9 @@ func PushSimpleMessage(msg string, isAtAll bool) {
 		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
 		"SystemIP: " + SystemIP(),
 		"PublicIP: " + PublicIP(),
+	}
+	if gin.IsDebugging() {
+		isAtAll = false // 开发环境下，不需要@所有人，减少干扰!
 	}
 	postData := map[string]interface{}{
 		"msgtype": "text",
@@ -95,9 +95,6 @@ func PushSimpleMessage(msg string, isAtAll bool) {
 
 // PushContextMessage
 func PushContextMessage(ctx *gin.Context, msg string, reqStr string, stack string, isAtAll bool) {
-	if !app.RobotEnable {
-		return
-	}
 	host, _ := os.Hostname()
 	text := []string{
 		msg + "\n---------------------------",
@@ -116,6 +113,9 @@ func PushContextMessage(ctx *gin.Context, msg string, reqStr string, stack strin
 	}
 	if stack != "" {
 		text = append(text, "\nStack:\n"+stack)
+	}
+	if gin.IsDebugging() {
+		isAtAll = false // 开发环境下，不需要@所有人，减少干扰!
 	}
 	postData := map[string]interface{}{
 		"msgtype": "text",

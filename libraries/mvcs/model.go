@@ -25,6 +25,7 @@ type DbCollector struct {
 }
 
 func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB {
+	defer tool.SafeDefer()
 	var (
 		err   error
 		fatal bool
@@ -39,7 +40,7 @@ func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB 
 		})
 		if err != nil {
 			if i < retryConnDbMaxTimes {
-				time.Sleep(time.Second * time.Duration(i))
+				time.Sleep(time.Millisecond * time.Duration(i*200))
 				dbc.once = sync.Once{}
 				continue
 			} else {
@@ -49,7 +50,7 @@ func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB 
 		}
 		if err = dbc.pointer.DB().Ping(); err != nil {
 			if i < retryConnDbMaxTimes {
-				time.Sleep(time.Second * time.Duration(i))
+				time.Sleep(time.Millisecond * time.Duration(i*200))
 				dbc.once = sync.Once{}
 				continue
 			} else {
@@ -60,11 +61,7 @@ func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB 
 		break
 	}
 	if fatal {
-		defer func() {
-			errMsg := fmt.Sprintf("new client of mysql occur error: %s", err.Error())
-			app.Logger.Error(errMsg)
-			tool.PushSimpleMessage(errMsg, true)
-		}()
+		panic(fmt.Sprintf("new client mysql[%s] occur error: %s", dialect.Db, err.Error()))
 		return nil
 	}
 	return dbc.pointer

@@ -23,6 +23,7 @@ type RdsCollector struct {
 }
 
 func (r *Redis) NewClient(rdc *RdsCollector, client *app.RedisClient) *redis.Client {
+	defer tool.SafeDefer()
 	var (
 		err   error
 		fatal bool
@@ -35,7 +36,7 @@ func (r *Redis) NewClient(rdc *RdsCollector, client *app.RedisClient) *redis.Cli
 		})
 		if err != nil {
 			if i < retryConnRdsMaxTimes {
-				time.Sleep(time.Second * time.Duration(i))
+				time.Sleep(time.Millisecond * time.Duration(i*200))
 				rdc.once = sync.Once{}
 				continue
 			} else {
@@ -45,7 +46,7 @@ func (r *Redis) NewClient(rdc *RdsCollector, client *app.RedisClient) *redis.Cli
 		}
 		if err = rdc.pointer.Ping().Err(); err != nil {
 			if i < retryConnRdsMaxTimes {
-				time.Sleep(time.Second * time.Duration(i))
+				time.Sleep(time.Millisecond * time.Duration(i*200))
 				rdc.once = sync.Once{}
 				continue
 			} else {
@@ -56,11 +57,7 @@ func (r *Redis) NewClient(rdc *RdsCollector, client *app.RedisClient) *redis.Cli
 		break
 	}
 	if fatal {
-		defer func() {
-			errMsg := fmt.Sprintf("get redis client of %s occur error: %s", client, err.Error())
-			app.Logger.Error(errMsg)
-			tool.PushSimpleMessage(errMsg, true)
-		}()
+		panic(fmt.Sprintf("get redis client[%s:%s] occur error: %s", client.Host, client.Port, err.Error()))
 		return nil
 	}
 	return rdc.pointer

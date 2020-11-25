@@ -21,6 +21,7 @@ func TestServer(t *testing.T) {
 	if gin.IsDebugging() {
 		SwaggerRegister()
 		PProfRegister()
+		StatsVizRegister("", gin.Accounts{"test": "123456"})
 		app.HttpServerWriteTimeout = time.Minute
 	}
 	SessionClientRegister(nil)

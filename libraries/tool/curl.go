@@ -55,22 +55,8 @@ func (r *Request) SetHeaders(headers map[string]string) *Request {
 
 // 将用户自定义请求头添加到http.Request实例上
 func (r *Request) setHeaders() *Request {
-	var foundConnection, foundUserAgent bool
 	for k, v := range r.Headers {
 		r.request.Header.Set(k, v)
-		switch k {
-		case "Connection":
-			foundConnection = true
-		case "User-Agent":
-			foundUserAgent = true
-		}
-	}
-	if !foundConnection {
-		r.request.Close = true
-		r.request.Header.Set("Connection", "close")
-	}
-	if !foundUserAgent {
-		r.request.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36")
 	}
 	return r
 }

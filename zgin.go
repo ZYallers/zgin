@@ -56,6 +56,17 @@ func SwaggerRegister() {
 	app.Engine.GET("/swag/json", handlers.SwagHandler)
 }
 
+func StatsVizRegister(relativePath string, accounts gin.Accounts) {
+	if relativePath == "" {
+		relativePath = "/statsviz"
+	}
+	if accounts == nil {
+		app.Engine.GET(relativePath+"/*filepath", handlers.StatsHandler)
+		return
+	}
+	app.Engine.Group(relativePath, gin.BasicAuth(accounts)).GET("/*filepath", handlers.StatsHandler)
+}
+
 func MiddlewareGlobalRegister() {
 	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
 }

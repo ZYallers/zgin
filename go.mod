@@ -3,6 +3,7 @@ module github.com/ZYallers/zgin
 go 1.12
 
 require (
+    github.com/arl/statsviz v0.2.1
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-redis/redis v6.15.9+incompatible

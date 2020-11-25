@@ -16,22 +16,23 @@ import (
 	"time"
 )
 
+// AuthCheck
 func AuthCheck(api *app.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var handler *app.RestHandler
-		if handler = versionCompare(ctx, api); handler == nil {
+		var rh *app.RestHandler
+		if rh = versionCompare(ctx, api); rh == nil {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
 			return
 		}
 
 		// 签名验证
-		if handler.Signed && !signCheck(ctx) {
+		if rh.Signed && !signCheck(ctx) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
 			return
 		}
 
 		// 登录验证
-		if handler.Logged && !loginCheck(ctx) {
+		if rh.Logged && !loginCheck(ctx) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
@@ -39,7 +40,7 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		// 解析sessionToken
 		parseSessionToken(ctx)
 
-		handler.Handler(ctx)
+		rh.Handler(ctx)
 		go regenSessionData(ctx.Copy())
 	}
 }

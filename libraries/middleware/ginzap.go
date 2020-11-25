@@ -71,20 +71,17 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 						}
 					}
 				}
-
 				errMsg := fmt.Sprintf("recovery from panic: %v", err)
 				reqStr := ctx.GetString(reqStrKey)
 				stacks := string(debug.Stack())
 				tool.PushContextMessage(ctx, errMsg, reqStr, stacks, true)
-
+				zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
 				if brokenPipe {
-					zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
 					// If the connection is dead, we can't write a status to it.
 					_ = ctx.Error(err.(error)) // nolint: errorcheck
 					ctx.Abort()
 					return
 				}
-
 				if gin.IsDebugging() {
 					var buf bytes.Buffer
 					ctx.Header("Content-Type", "text/html;charset=utf-8")
@@ -97,11 +94,10 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 					buf.WriteString(`</p></pre>`)
 					ctx.String(http.StatusInternalServerError, buf.String())
 					ctx.Abort()
-				} else {
-					zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
-					ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-						"code": http.StatusInternalServerError, "msg": "server internal error"})
+					return
 				}
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError,
+					gin.H{"code": http.StatusInternalServerError, "msg": "server internal error"})
 			}
 		}()
 

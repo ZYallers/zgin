@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/ZYallers/zgin/app"
 	"github.com/ZYallers/zgin/libraries/logger"
@@ -71,33 +70,30 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 						}
 					}
 				}
+
 				errMsg := fmt.Sprintf("recovery from panic: %v", err)
 				reqStr := ctx.GetString(reqStrKey)
 				stacks := string(debug.Stack())
-				tool.PushContextMessage(ctx, errMsg, reqStr, stacks, true)
-				zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
+
+				go func() {
+					tool.PushContextMessage(ctx, errMsg, reqStr, stacks, true)
+					zl.Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
+				}()
+
 				if brokenPipe {
 					// If the connection is dead, we can't write a status to it.
 					_ = ctx.Error(err.(error)) // nolint: errorcheck
 					ctx.Abort()
 					return
 				}
+
+				data := gin.H{"error": err}
 				if gin.IsDebugging() {
-					var buf bytes.Buffer
-					ctx.Header("Content-Type", "text/html;charset=utf-8")
-					buf.WriteString(`<pre style="font-family:Consolas,Menlo;line-height:1.5em;font-size:12px"><h1>`)
-					buf.WriteString(errMsg)
-					buf.WriteString(`</h1><h2>stack: </h2><p>`)
-					buf.WriteString(stacks)
-					buf.WriteString(`</p><h2>request: </h2><p>`)
-					buf.WriteString(reqStr)
-					buf.WriteString(`</p></pre>`)
-					ctx.String(http.StatusInternalServerError, buf.String())
-					ctx.Abort()
-					return
+					data["request"] = reqStr
+					data["stack"] = stacks
 				}
-				ctx.AbortWithStatusJSON(http.StatusInternalServerError,
-					gin.H{"code": http.StatusInternalServerError, "msg": "server internal error"})
+				ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusInternalServerError,
+					"msg": "server internal error", "data": data})
 			}
 		}()
 

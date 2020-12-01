@@ -6,7 +6,7 @@ import (
 	"github.com/ZYallers/zgin/app"
 	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/go-redis/redis"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -18,47 +18,42 @@ type Redis struct {
 }
 
 type RdsCollector struct {
-	once    sync.Once
+	done    uint32
 	pointer *redis.Client
 }
 
 func (r *Redis) NewClient(rdc *RdsCollector, client *app.RedisClient) *redis.Client {
 	defer tool.SafeDefer()
-	var (
-		err   error
-		fatal bool
-	)
+	var err error
 	for i := 1; i <= retryConnRdsMaxTimes; i++ {
-		//log.Printf("getClient %s try --->: %d\n", client, i)
-		rdc.once.Do(func() {
-			//log.Printf("newClient try --->: %s\n", client)
+		// log.Printf("getClient %s try --->: %d\n", client, i)
+		if atomic.LoadUint32(&rdc.done) == 0 {
+			// log.Printf("newClient try --->: %s\n", client)
+			atomic.StoreUint32(&rdc.done, 1)
 			rdc.pointer, err = r.newClient(client)
-		})
-		if err != nil {
-			if i < retryConnRdsMaxTimes {
-				time.Sleep(time.Millisecond * time.Duration(i*200))
-				rdc.once = sync.Once{}
-				continue
+		}
+		if err == nil {
+			if rdc.pointer == nil {
+				err = fmt.Errorf("redis NewClient(%s:%s) is nil", client.Host, client.Port)
 			} else {
-				fatal = true
-				break
+				err = rdc.pointer.Ping().Err()
 			}
 		}
-		if err = rdc.pointer.Ping().Err(); err != nil {
+		if err != nil {
+			atomic.StoreUint32(&rdc.done, 0)
 			if i < retryConnRdsMaxTimes {
 				time.Sleep(time.Millisecond * time.Duration(i*200))
-				rdc.once = sync.Once{}
 				continue
 			} else {
-				fatal = true
-				break
+				go func() {
+					msg := fmt.Sprintf("redis NewClient(%s:%s) error: %v", client.Host, client.Port, err)
+					app.Logger.Error(msg)
+					tool.PushSimpleMessage(fmt.Sprintf("recovery from panic:\n%s", msg), true)
+				}()
+				return nil
 			}
 		}
 		break
-	}
-	if fatal {
-		panic(fmt.Sprintf("get redis client[%s:%s] occur error: %s", client.Host, client.Port, err.Error()))
-		return nil
 	}
 	return rdc.pointer
 }

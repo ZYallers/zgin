@@ -355,7 +355,6 @@ func SortMapByKey(mp map[string]interface{}) string {
 func Struct2Map(obj interface{}) map[string]interface{} {
 	t := reflect.TypeOf(obj)
 	v := reflect.ValueOf(obj)
-
 	var data = make(map[string]interface{})
 	for i := 0; i < t.NumField(); i++ {
 		data[t.Field(i).Name] = v.Field(i).Interface()
@@ -364,6 +363,7 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 }
 
 // 带签名http请求
+// 默认请求方式POST，超时3秒
 func HttpRequestWithSign(url string, data map[string]interface{}, params ...interface{}) string {
 	var (
 		method  = http.MethodPost
@@ -387,7 +387,7 @@ func HttpRequestWithSign(url string, data map[string]interface{}, params ...inte
 	headers := map[string]string{
 		"Connection":   "close",
 		"Content-Type": "application/x-www-form-urlencoded",
-		"User-Agent":   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36",
+		"User-Agent":   "ZGin/1.1.6",
 	}
 	req := NewRequest(url).SetMethod(method).SetHeaders(headers).SetTimeOut(timeout)
 

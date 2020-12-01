@@ -6,7 +6,7 @@ import (
 )
 
 type SessionConfig struct {
-	Client         *redis.Client
+	Client         func() *redis.Client
 	TokenKey       string
 	DataKey        string
 	UpdateDuration time.Duration

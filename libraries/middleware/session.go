@@ -4,17 +4,22 @@ import (
 	"github.com/ZYallers/zgin/app"
 	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"time"
 )
 
 const tokenValKeyPrefix = "ci_session:"
 
 func regenSessionData(ctx *gin.Context) {
-	if app.Session.Client == nil {
+	defer tool.SafeDefer()
+
+	var client *redis.Client
+	if app.Session.Client != nil {
+		client = app.Session.Client()
+	}
+	if client == nil {
 		return
 	}
-
-	defer tool.SafeDefer()
 
 	var token string
 	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
@@ -39,26 +44,27 @@ func regenSessionData(ctx *gin.Context) {
 				}
 				vars["__ci_vars"] = newCiVars
 			}
-			app.Session.Client.Set(tokenValKeyPrefix+token, tool.PhpSerialize(vars),
+			client.Set(tokenValKeyPrefix+token, tool.PhpSerialize(vars),
 				time.Duration(app.Session.Expiration)*time.Second)
 		}
 	}
 }
 
 func sessionData(token string) map[string]interface{} {
-	if app.Session.Client == nil {
+	var client *redis.Client
+	if app.Session.Client != nil {
+		client = app.Session.Client()
+	}
+	if client == nil {
 		return nil
 	}
-	if str, _ := app.Session.Client.Get(tokenValKeyPrefix + token).Result(); str != "" {
+	if str, _ := client.Get(tokenValKeyPrefix + token).Result(); str != "" {
 		return tool.PhpUnserialize(str)
 	}
 	return nil
 }
 
 func parseSessionToken(ctx *gin.Context) {
-	if app.Session.Client == nil {
-		return
-	}
 	var token string
 	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
 		return

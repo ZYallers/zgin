@@ -34,9 +34,9 @@ func EnvInit() {
 	app.Logger = logger.AppLogger()
 }
 
-func SessionClientRegister(cli *redis.Client) {
-	if cli != nil {
-		app.Session.Client = cli
+func SessionClientRegister(fn func() *redis.Client) {
+	if fn != nil {
+		app.Session.Client = fn
 	}
 }
 

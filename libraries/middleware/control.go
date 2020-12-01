@@ -106,9 +106,6 @@ func signCheck(ctx *gin.Context) bool {
 
 // loginCheck
 func loginCheck(ctx *gin.Context) bool {
-	if app.Session.Client == nil {
-		return false
-	}
 	var token string
 	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
 		return false

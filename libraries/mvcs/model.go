@@ -13,7 +13,11 @@ import (
 )
 
 const (
-	dialectConfig       = "?charset=utf8&loc=PRC&parseTime=true&maxAllowedPacket=0&timeout=10s"
+	charset             = "utf8"
+	loc                 = "PRC"
+	parseTime           = "true"
+	maxAllowedPacket    = "0"
+	timeout             = "10s"
 	retryConnDbMaxTimes = 3
 	maxOpenConns        = 1000
 )
@@ -74,6 +78,7 @@ func (m *Model) openMysql(dialect *app.MysqlDialect) (*gorm.DB, error) {
 	if dialect == nil {
 		return nil, errors.New("mysql dialect is nil")
 	}
+
 	var tcp bytes.Buffer
 	tcp.WriteString(dialect.User)
 	tcp.WriteString(":")
@@ -84,7 +89,47 @@ func (m *Model) openMysql(dialect *app.MysqlDialect) (*gorm.DB, error) {
 	tcp.WriteString(dialect.Port)
 	tcp.WriteString(")/")
 	tcp.WriteString(dialect.Db)
-	tcp.WriteString(dialectConfig)
+
+	// charset
+	tcp.WriteString("?charset=")
+	if dialect.Charset != "" {
+		tcp.WriteString(dialect.Charset)
+	} else {
+		tcp.WriteString(charset)
+	}
+
+	// loc
+	tcp.WriteString("&loc=")
+	if dialect.Loc != "" {
+		tcp.WriteString(dialect.Loc)
+	} else {
+		tcp.WriteString(loc)
+	}
+
+	// parseTime
+	tcp.WriteString("&parseTime=")
+	if dialect.ParseTime != "" {
+		tcp.WriteString(dialect.ParseTime)
+	} else {
+		tcp.WriteString(parseTime)
+	}
+
+	// maxAllowedPacket
+	tcp.WriteString("&maxAllowedPacket=")
+	if dialect.MaxAllowedPacket != "" {
+		tcp.WriteString(dialect.MaxAllowedPacket)
+	} else {
+		tcp.WriteString(maxAllowedPacket)
+	}
+
+	// timeout
+	tcp.WriteString("&timeout=")
+	if dialect.Timeout != "" {
+		tcp.WriteString(dialect.Timeout)
+	} else {
+		tcp.WriteString(timeout)
+	}
+
 	return gorm.Open("mysql", tcp.String())
 }
 

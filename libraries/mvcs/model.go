@@ -1,25 +1,24 @@
 package mvcs
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	app "github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/app"
 	"github.com/ZYallers/zgin/libraries/tool"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"sync/atomic"
 	"time"
 )
 
 const (
-	charset             = "utf8"
-	loc                 = "PRC"
-	parseTime           = "true"
-	maxAllowedPacket    = "0"
-	timeout             = "10s"
-	retryConnDbMaxTimes = 3
-	maxOpenConns        = 1000
+	defaultCharset          = "utf8mb4"
+	defaultLoc              = "Local"
+	defaultParseTime        = "true"
+	defaultMaxAllowedPacket = "0"
+	defaultTimeout          = "15s"
+	retryConnDbMaxTimes     = 3
+	maxOpenConns            = 1000
 )
 
 type Model struct {
@@ -46,7 +45,11 @@ func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB 
 			if dbc.pointer == nil {
 				err = fmt.Errorf("mysql NewClient(%s) is nil", dialect.Db)
 			} else {
-				err = dbc.pointer.DB().Ping()
+				if sqlDB, err2 := dbc.pointer.DB(); err2 != nil {
+					err = err2
+				} else {
+					err = sqlDB.Ping()
+				}
 			}
 		}
 		if err != nil {
@@ -70,7 +73,9 @@ func (m *Model) NewClient(dbc *DbCollector, dialect *app.MysqlDialect) *gorm.DB 
 
 func (m *Model) SetMaxOpenConns(db *gorm.DB, num int) {
 	if num > 0 && num <= maxOpenConns {
-		db.DB().SetMaxOpenConns(num)
+		if sqlDB, err := db.DB(); err == nil {
+			sqlDB.SetMaxOpenConns(num)
+		}
 	}
 }
 
@@ -78,63 +83,39 @@ func (m *Model) openMysql(dialect *app.MysqlDialect) (*gorm.DB, error) {
 	if dialect == nil {
 		return nil, errors.New("mysql dialect is nil")
 	}
-
-	var tcp bytes.Buffer
-	tcp.WriteString(dialect.User)
-	tcp.WriteString(":")
-	tcp.WriteString(dialect.Pwd)
-	tcp.WriteString("@tcp(")
-	tcp.WriteString(dialect.Host)
-	tcp.WriteString(":")
-	tcp.WriteString(dialect.Port)
-	tcp.WriteString(")/")
-	tcp.WriteString(dialect.Db)
-
-	// charset
-	tcp.WriteString("?charset=")
+	charset := defaultCharset
 	if dialect.Charset != "" {
-		tcp.WriteString(dialect.Charset)
-	} else {
-		tcp.WriteString(charset)
+		charset = dialect.Charset
 	}
-
-	// loc
-	tcp.WriteString("&loc=")
-	if dialect.Loc != "" {
-		tcp.WriteString(dialect.Loc)
-	} else {
-		tcp.WriteString(loc)
-	}
-
-	// parseTime
-	tcp.WriteString("&parseTime=")
+	parseTime := defaultParseTime
 	if dialect.ParseTime != "" {
-		tcp.WriteString(dialect.ParseTime)
-	} else {
-		tcp.WriteString(parseTime)
+		parseTime = dialect.ParseTime
 	}
-
-	// maxAllowedPacket
-	tcp.WriteString("&maxAllowedPacket=")
+	loc := defaultLoc
+	if dialect.Loc != "" {
+		loc = dialect.Loc
+	}
+	maxAllowedPacket := defaultMaxAllowedPacket
 	if dialect.MaxAllowedPacket != "" {
-		tcp.WriteString(dialect.MaxAllowedPacket)
-	} else {
-		tcp.WriteString(maxAllowedPacket)
+		maxAllowedPacket = dialect.MaxAllowedPacket
 	}
-
-	// timeout
-	tcp.WriteString("&timeout=")
+	timeout := defaultTimeout
 	if dialect.Timeout != "" {
-		tcp.WriteString(dialect.Timeout)
-	} else {
-		tcp.WriteString(timeout)
+		timeout = dialect.Timeout
 	}
-
-	return gorm.Open("mysql", tcp.String())
+	dns := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%s&loc=%s&maxAllowedPacket=%s&timeout=%s",
+		dialect.User, dialect.Pwd, dialect.Host, dialect.Port, dialect.Db,
+		charset, parseTime, loc, maxAllowedPacket, timeout)
+	return gorm.Open(mysql.Open(dns), &gorm.Config{})
 }
 
 func (m *Model) setDefaultConfig(db *gorm.DB) {
-	db.DB().SetMaxOpenConns(8)
-	db.DB().SetMaxIdleConns(2)
-	db.DB().SetConnMaxLifetime(time.Second * 30)
+	if sqlDB, err := db.DB(); err == nil {
+		// SetMaxIdleConns 用于设置连接池中空闲连接的最大数量
+		sqlDB.SetMaxIdleConns(10)
+		// SetMaxOpenConns 设置打开数据库连接的最大数量
+		sqlDB.SetMaxOpenConns(100)
+		// SetConnMaxLifetime 设置了连接可复用的最大时间
+		sqlDB.SetConnMaxLifetime(time.Hour)
+	}
 }

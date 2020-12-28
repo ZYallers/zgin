@@ -5,14 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/ZYallers/zgin/app"
-	"github.com/ZYallers/zgin/libraries/logger"
-	"github.com/ZYallers/zgin/libraries/tool"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
-	"go.uber.org/zap"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -114,22 +110,4 @@ func loginCheck(ctx *gin.Context) bool {
 		return true
 	}
 	return false
-}
-
-// push404Handler
-func push404Handler(ctx *gin.Context) {
-	defer tool.SafeDefer()
-	reqStr := ctx.GetString(reqStrKey)
-	path := ctx.Request.URL.Path
-	logger.Use("404").Info(path,
-		zap.String("proto", ctx.Request.Proto),
-		zap.String("method", ctx.Request.Method),
-		zap.String("host", ctx.Request.Host),
-		zap.String("url", ctx.Request.URL.String()),
-		zap.String("query", ctx.Request.URL.RawQuery),
-		zap.String("clientIP", tool.ClientIP(ctx.ClientIP())),
-		zap.Any("header", ctx.Request.Header),
-		zap.String("request", reqStr),
-	)
-	tool.PushContextMessage(ctx, strings.TrimLeft(path, "/")+" page not found", reqStr, "", false)
 }

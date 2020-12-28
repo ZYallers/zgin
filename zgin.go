@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	developMode = `development`
+	developMode = "development"
 )
 
 func EnvInit() {
@@ -32,6 +32,23 @@ func EnvInit() {
 	gin.DisableConsoleColor()
 	app.Engine = gin.New()
 	app.Logger = logger.AppLogger()
+
+	NoRouteHandler()
+}
+
+func NoRouteHandler() {
+	app.Engine.NoRoute(func(ctx *gin.Context) {
+		go middleware.Push404Handler(ctx.Copy())
+		ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
+	})
+}
+
+func MiddlewareGlobalRegister() {
+	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
+}
+
+func MiddlewareCustomRegister(api *app.Restful) {
+	app.Engine.Use(middleware.AuthCheck(api))
 }
 
 func SessionClientRegister(fn func() *redis.Client) {
@@ -39,6 +56,8 @@ func SessionClientRegister(fn func() *redis.Client) {
 		app.Session.Client = fn
 	}
 }
+
+// ***************************************************** Third-party middleware ************************************* //
 
 func PProfRegister() {
 	handlers.PProfRegister(app.Engine)
@@ -67,13 +86,7 @@ func StatsVizRegister(relativePath string, accounts gin.Accounts) {
 	app.Engine.Group(relativePath, gin.BasicAuth(accounts)).GET("/*filepath", handlers.StatsHandler)
 }
 
-func MiddlewareGlobalRegister() {
-	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
-}
-
-func MiddlewareCustomRegister(api *app.Restful) {
-	app.Engine.Use(middleware.AuthCheck(api))
-}
+// ***************************************************** Server Listen ********************************************** //
 
 func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {
 	tool.Graceful(&http.Server{Addr: *app.HttpServerAddr, Handler: app.Engine, ReadTimeout: readTimeout,

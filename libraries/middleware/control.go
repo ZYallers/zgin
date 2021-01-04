@@ -9,6 +9,7 @@ import (
 	"github.com/syyongx/php2go"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,42 +29,60 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		}
 
 		// 登录验证
-		if rh.Logged && !loginCheck(ctx) {
+		token := queryPostForm(ctx, app.Session.TokenKey)
+		if rh.Logged && !loginCheck(token) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
 
-		// 解析sessionToken
-		parseSessionToken(ctx)
+		// 解析会话
+		if token != "" {
+			parseSessionToken(ctx, token)
+		}
 
-		rh.Handler(ctx)
-		go regenSessionData(ctx.Copy())
+		if rh.Handler != nil {
+			rh.Handler(ctx)
+		}
+
+		// 更新会话日期
+		if token != "" {
+			go regenSessionData(ctx, token)
+		}
 	}
 }
 
 // versionCompare
 func versionCompare(ctx *gin.Context, api *app.Restful) *app.RestHandler {
-	var (
-		exist    bool
-		handlers []app.RestHandler
-	)
-	if handlers, exist = (*api)[ctx.Request.URL.Path[1:]]; !exist {
+	var handlers []app.RestHandler
+
+	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
 		return nil
+	} else {
+		if hd, ok := (*api)[path]; !ok {
+			return nil
+		} else {
+			handlers = hd
+		}
 	}
+
 	version, method := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
 	for _, handler := range handlers {
-		if _, ok := handler.Method[method]; ok {
-			if handler.Version == `` || version == handler.Version {
+		if handler.Method == nil {
+			return nil
+		}
+		if _, ok := handler.Method[method]; !ok {
+			return nil
+		}
+		if handler.Version == "" || version == handler.Version {
+			return &handler
+		}
+		if le := len(handler.Version); handler.Version[le-1:] == "+" {
+			vs := handler.Version[0 : le-1]
+			if version == vs {
 				return &handler
 			}
-			if le := len(handler.Version); handler.Version[le-1:] == `+` {
-				vs := handler.Version[0 : le-1]
-				if version == vs {
-					return &handler
-				}
-				if php2go.VersionCompare(version, vs, `gt`) {
-					return &handler
-				}
+			if php2go.VersionCompare(version, vs, ">") {
+				return &handler
 			}
 		}
 	}
@@ -101,9 +120,8 @@ func signCheck(ctx *gin.Context) bool {
 }
 
 // loginCheck
-func loginCheck(ctx *gin.Context) bool {
-	var token string
-	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
+func loginCheck(token string) bool {
+	if token == "" {
 		return false
 	}
 	if vars := sessionData(token); vars != nil {

@@ -10,7 +10,7 @@ import (
 
 const tokenValKeyPrefix = "ci_session:"
 
-func regenSessionData(ctx *gin.Context) {
+func regenSessionData(ctx *gin.Context, token string) {
 	defer tool.SafeDefer()
 
 	var client *redis.Client
@@ -18,11 +18,6 @@ func regenSessionData(ctx *gin.Context) {
 		client = app.Session.Client()
 	}
 	if client == nil {
-		return
-	}
-
-	var token string
-	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
 		return
 	}
 
@@ -64,11 +59,7 @@ func sessionData(token string) map[string]interface{} {
 	return nil
 }
 
-func parseSessionToken(ctx *gin.Context) {
-	var token string
-	if token = queryPostForm(ctx, app.Session.TokenKey); token == "" {
-		return
-	}
+func parseSessionToken(ctx *gin.Context, token string) {
 	if vars := sessionData(token); vars != nil {
 		ctx.Set(app.Session.DataKey, vars)
 	}

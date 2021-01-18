@@ -6,17 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 )
 
-// 默认超时时间
-const defaultTimeout = 10 * time.Second
-
-// Request构造类
 type Request struct {
 	client   *http.Client
 	request  *http.Request
@@ -30,24 +25,24 @@ type Request struct {
 	Body     io.Reader
 }
 
-// 创建一个Request实例
+// NewRequest
 func NewRequest(url string) *Request {
-	return &Request{Url: url, client: &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}, Timeout: defaultTimeout}
+	return &Request{Url: url, client: HttpClient, Timeout: DefaultHttpClientTimeout}
 }
 
-// 设置请求方法
+// SetMethod
 func (r *Request) SetMethod(method string) *Request {
 	r.Method = method
 	return r
 }
 
-// 设置请求地址
+// SetUrl
 func (r *Request) SetUrl(url string) *Request {
 	r.Url = url
 	return r
 }
 
-// 设置请求头
+// SetHeaders
 func (r *Request) SetHeaders(headers map[string]string) *Request {
 	r.Headers = headers
 	return r
@@ -61,7 +56,7 @@ func (r *Request) setHeaders() *Request {
 	return r
 }
 
-// 设置请求cookies
+// SetCookies
 func (r *Request) SetCookies(cookies map[string]string) *Request {
 	r.Cookies = cookies
 	return r
@@ -91,7 +86,7 @@ func (r *Request) setQueries() *Request {
 	return r
 }
 
-// 设置post请求的提交数据
+// SetPostData
 func (r *Request) SetPostData(postData map[string]interface{}) *Request {
 	if postData != nil {
 		r.PostData = postData
@@ -100,7 +95,7 @@ func (r *Request) SetPostData(postData map[string]interface{}) *Request {
 	return r
 }
 
-// setPostData
+// 设置post请求的提交数据
 func (r *Request) setPostData() (err error) {
 	if ct, ok := r.Headers["Content-Type"]; ok {
 		switch strings.ToLower(ct) {
@@ -121,6 +116,23 @@ func (r *Request) setPostData() (err error) {
 	return
 }
 
+// SetBody
+func (r *Request) SetBody(body io.Reader) *Request {
+	if body != nil {
+		r.Body = body
+		r.PostData = nil
+	}
+	return r
+}
+
+// SetTimeOut
+func (r *Request) SetTimeOut(timeout time.Duration) *Request {
+	if timeout > 0 && timeout < DefaultHttpClientTimeout {
+		r.Timeout = timeout
+	}
+	return r
+}
+
 // 发起get请求
 func (r *Request) Get() (*Response, error) {
 	return r.SetMethod(http.MethodGet).Send()
@@ -129,23 +141,6 @@ func (r *Request) Get() (*Response, error) {
 // 发起post请求
 func (r *Request) Post() (*Response, error) {
 	return r.SetMethod(http.MethodPost).Send()
-}
-
-// SetDialTimeOut
-func (r *Request) SetTimeOut(timeout time.Duration) *Request {
-	if timeout > 0 && timeout < defaultTimeout {
-		r.Timeout = timeout
-	}
-	return r
-}
-
-// SetBody
-func (r *Request) SetBody(body io.Reader) *Request {
-	if body != nil {
-		r.Body = body
-		r.PostData = nil
-	}
-	return r
 }
 
 // 发起请求
@@ -210,7 +205,7 @@ func (r *Response) parseHeaders() {
 }
 
 func (r *Response) parseBody() error {
-	if bts, err := ioutil.ReadAll(r.Raw.Body); err != nil {
+	if bts, err := IoCopy(r.Raw.Body); err != nil {
 		return err
 	} else {
 		r.Body = string(bts)

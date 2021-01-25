@@ -111,11 +111,11 @@ func (m *Model) openMysql(dialect *app.MysqlDialect) (*gorm.DB, error) {
 
 func (m *Model) setDefaultConfig(db *gorm.DB) {
 	if sqlDB, err := db.DB(); err == nil {
-		// SetMaxIdleConns 用于设置连接池中空闲连接的最大数量
-		sqlDB.SetMaxIdleConns(10)
-		// SetMaxOpenConns 设置打开数据库连接的最大数量
+		// 设置连接池中空闲连接的最大数量
+		sqlDB.SetMaxIdleConns(100)
+		// 设置打开数据库连接的最大数量
 		sqlDB.SetMaxOpenConns(100)
-		// SetConnMaxLifetime 设置了连接可复用的最大时间
-		sqlDB.SetConnMaxLifetime(time.Hour)
+		// 设置了连接可复用的最大时间
+		sqlDB.SetConnMaxLifetime(5 * time.Minute)
 	}
 }

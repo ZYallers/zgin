@@ -36,17 +36,10 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		}
 
 		// 解析会话
-		if token != "" {
-			parseSessionToken(ctx, token)
-		}
+		parseSessionToken(ctx, token)
 
 		if rh.Handler != nil {
 			rh.Handler(ctx)
-		}
-
-		// 更新会话日期
-		if token != "" {
-			go regenSessionData(ctx, token)
 		}
 	}
 }

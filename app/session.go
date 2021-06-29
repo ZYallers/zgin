@@ -6,11 +6,11 @@ import (
 )
 
 type SessionConfig struct {
-	Client         func() *redis.Client
 	TokenKey       string
 	DataKey        string
-	UpdateDuration time.Duration
 	Expiration     int64
+	UpdateDuration time.Duration
+	GetClientFunc  func() *redis.Client
 }
 
 var Session = &SessionConfig{

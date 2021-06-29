@@ -28,15 +28,18 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 			return
 		}
 
-		// 登录验证
 		token := queryPostForm(ctx, app.Session.TokenKey)
+
+		// 登录验证
 		if rh.Logged && !loginCheck(token) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
 
 		// 解析会话
-		parseSessionToken(ctx, token)
+		if token != "" {
+			parseSessionToken(ctx, token)
+		}
 
 		if rh.Handler != nil {
 			rh.Handler(ctx)

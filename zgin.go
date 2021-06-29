@@ -53,7 +53,7 @@ func MiddlewareCustomRegister(api *app.Restful) {
 
 func SessionClientRegister(fn func() *redis.Client) {
 	if fn != nil {
-		app.Session.Client = fn
+		app.Session.GetClientFunc = fn
 	}
 }
 

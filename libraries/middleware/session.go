@@ -9,15 +9,15 @@ import (
 
 const keyPrefix = "ci_session:"
 
-func sessionData(token string) map[string]interface{} {
-	if token == "" {
-		return nil
+func getSessionClient() *redis.Client {
+	if app.Session.GetClientFunc != nil {
+		return app.Session.GetClientFunc()
 	}
+	return nil
+}
 
-	var client *redis.Client
-	if app.Session.Client != nil {
-		client = app.Session.Client()
-	}
+func sessionData(token string) map[string]interface{} {
+	client := getSessionClient()
 	if client == nil {
 		return nil
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Request构造类
 type Request struct {
 	client   *http.Client
 	request  *http.Request
@@ -22,27 +23,26 @@ type Request struct {
 	Cookies  map[string]string
 	Queries  map[string]string
 	PostData map[string]interface{}
-	Body     io.Reader
 }
 
-// NewRequest
+// 创建一个Request实例
 func NewRequest(url string) *Request {
 	return &Request{Url: url, client: HttpClient, Timeout: DefaultHttpClientTimeout}
 }
 
-// SetMethod
+// 设置请求方法
 func (r *Request) SetMethod(method string) *Request {
 	r.Method = method
 	return r
 }
 
-// SetUrl
+// 设置请求地址
 func (r *Request) SetUrl(url string) *Request {
 	r.Url = url
 	return r
 }
 
-// SetHeaders
+// 设置请求头
 func (r *Request) SetHeaders(headers map[string]string) *Request {
 	r.Headers = headers
 	return r
@@ -56,7 +56,7 @@ func (r *Request) setHeaders() *Request {
 	return r
 }
 
-// SetCookies
+// 设置请求cookies
 func (r *Request) SetCookies(cookies map[string]string) *Request {
 	r.Cookies = cookies
 	return r
@@ -86,50 +86,9 @@ func (r *Request) setQueries() *Request {
 	return r
 }
 
-// SetPostData
-func (r *Request) SetPostData(postData map[string]interface{}) *Request {
-	if postData != nil {
-		r.PostData = postData
-		r.Body = nil
-	}
-	return r
-}
-
 // 设置post请求的提交数据
-func (r *Request) setPostData() (err error) {
-	if ct, ok := r.Headers["Content-Type"]; ok {
-		switch strings.ToLower(ct) {
-		case "application/json", "application/json;charset=utf-8":
-			var bts []byte
-			if bts, err = json.Marshal(r.PostData); err == nil {
-				r.Body = bytes.NewReader(bts)
-			}
-			return
-		}
-	}
-	// 如果 Content-Type 不能匹配到，默认用 application/x-www-form-urlencoded 的方式处理
-	postData := url.Values{}
-	for k, v := range r.PostData {
-		postData.Add(k, fmt.Sprintf("%v", v))
-	}
-	r.Body = strings.NewReader(postData.Encode())
-	return
-}
-
-// SetBody
-func (r *Request) SetBody(body io.Reader) *Request {
-	if body != nil {
-		r.Body = body
-		r.PostData = nil
-	}
-	return r
-}
-
-// SetTimeOut
-func (r *Request) SetTimeOut(timeout time.Duration) *Request {
-	if timeout > 0 && timeout < DefaultHttpClientTimeout {
-		r.Timeout = timeout
-	}
+func (r *Request) SetPostData(postData map[string]interface{}) *Request {
+	r.PostData = postData
 	return r
 }
 
@@ -143,14 +102,37 @@ func (r *Request) Post() (*Response, error) {
 	return r.SetMethod(http.MethodPost).Send()
 }
 
+// SetDialTimeOut
+func (r *Request) SetTimeOut(timeout time.Duration) *Request {
+	if timeout > 0 && timeout < DefaultHttpClientTimeout {
+		r.Timeout = timeout
+	}
+	return r
+}
+
 // 发起请求
 func (r *Request) Send() (*Response, error) {
-	if r.PostData != nil {
-		if err := r.setPostData(); err != nil {
-			return nil, err
+	var body io.Reader
+	if len(r.PostData) > 0 {
+		if contentType, exist := r.Headers["Content-Type"]; exist {
+			switch strings.ToLower(contentType) {
+			case "application/json", "application/json;charset=utf-8":
+				if bts, err := json.Marshal(r.PostData); err != nil {
+					return nil, err
+				} else {
+					body = bytes.NewReader(bts)
+				}
+			case "application/x-www-form-urlencoded":
+				postData := url.Values{}
+				for k, v := range r.PostData {
+					postData.Add(k, fmt.Sprintf("%v", v))
+				}
+				body = strings.NewReader(postData.Encode())
+			}
 		}
 	}
-	if req, err := http.NewRequest(r.Method, r.Url, r.Body); err != nil {
+
+	if req, err := http.NewRequest(r.Method, r.Url, body); err != nil {
 		return nil, err
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)

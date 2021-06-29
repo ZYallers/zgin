@@ -91,9 +91,6 @@ syncFun(){
     initFun
     cd ./src
 
-    export GO111MODULE=on
-    export GOPROXY=https://goproxy.cn
-
     echoFun "go mod vendor:" title
     if [[ ! -f "./go.mod" ]];then
         go mod init src

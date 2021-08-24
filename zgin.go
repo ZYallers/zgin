@@ -34,6 +34,13 @@ func EnvInit() {
 	app.Logger = logger.AppLogger()
 
 	NoRouteHandler()
+	HealthHandler()
+}
+
+func HealthHandler() {
+	app.Engine.GET("/health", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, `ok`)
+	})
 }
 
 func NoRouteHandler() {

@@ -12,7 +12,7 @@ var (
 	Logger         *zap.Logger
 
 	Name                  = "zgin"
-	Version               = "0.0.0"
+	Version               = "1.0.0"
 	VersionKey            = "app_version"
 	HttpServerDefaultAddr = "0.0.0.0:9999"
 	LogDir                = "/apps/logs/go/zgin"

@@ -196,8 +196,25 @@ reloadFun(){
     export BUILD_ID=dontKillMe
 
     nohup ./bin/${name} -http.addr=${httpServerAddr} >> ${logfile} 2>&1 &
+    echoFun "$name($httpServerAddr) is reloaded, pid: `echo $!`" ok
 
-    echoFun "runner [$httpServerAddr] is reloaded, pid: `echo $!`" ok
+    # 检查对应服务端口是否已经正常启动
+    sleep 3s
+    port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
+    if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -le 0 ]];then
+        echoFun "$name($httpServerAddr) address not in listening" err
+        exit 1
+    else
+        echoFun "$name($httpServerAddr) address in listening..." ok
+        # 检查健康接口是否访问正常
+        respHttpCode=`curl -m 3 -s -w "%{http_code}" "http://{$httpServerAddr}/health"`
+        if [[ "${respHttpCode}" != 'ok200' ]];then
+            echoFun "curl 'http://$httpServerAddr/health' error: $respHttpCode" err
+            exit 1
+        else
+            echoFun "curl 'http://$httpServerAddr/health' succeed" ok
+        fi
+    fi
 }
 
 quitFun(){

@@ -202,14 +202,14 @@ reloadFun(){
     sleep 3s
     port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
     if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -le 0 ]];then
-        echoFun "$name($httpServerAddr) address not in listening" err
+        echoFun "$name($httpServerAddr) service is not running" err
         exit 1
     else
-        echoFun "$name($httpServerAddr) address in listening..." ok
+        echoFun "$name($httpServerAddr) service is running..." ok
         # 检查健康接口是否访问正常
         respHttpCode=`curl -m 3 -s -w "%{http_code}" "http://{$httpServerAddr}/health"`
         if [[ "${respHttpCode}" != 'ok200' ]];then
-            echoFun "curl 'http://$httpServerAddr/health' error: $respHttpCode" err
+            echoFun "curl 'http://$httpServerAddr/health' error: ($respHttpCode)" err
             exit 1
         else
             echoFun "curl 'http://$httpServerAddr/health' succeed" ok
@@ -221,28 +221,20 @@ quitFun(){
     addr=$1
     port=`echo ${addr}|awk -F ':' '{print $2}'`
 
-    pid=""
-    if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -gt 0 ]];then
+    counter=1
+    while true;
+    do
         pid=`lsof -i tcp:${port}|grep LISTEN|awk '{print $2}'`
-        echoFun "tcp [$addr] address already in listening, pid: $pid" tip
-        kill ${pid}
-        echoFun "pid[$pid] killing" ok
-    fi
-
-    if [[ "$pid" != "" ]];then
-        while true;
-        do
-            if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -gt 0 ]];then
-                echoFun "killing pid[$pid] ..." tip
-                sleep 0.5s
-            else
-                echoFun "quit finish" ok
-                break
-            fi
-        done
-    else
-        echoFun "no pid in running" tip
-    fi
+        if [[ ${pid} -gt 0 ]];then
+            echoFun "killing service $name($port), pid($pid), $counter tried" tip
+            kill ${pid}
+            counter=$(($counter+1))
+            sleep 1s
+        else
+            echoFun "$name($port) service is stopped" ok
+            break
+        fi
+    done
 }
 
 while getopts ':d' OPT; do

@@ -31,14 +31,14 @@ func Graceful(srv *http.Server, zl *zap.Logger, timeout time.Duration) {
 	go func() {
 		defer close(doneChan)
 		for s := range quitChan {
-			logAndPushMsg(zl, fmt.Sprintf("server(%d) is shutting down(%v)...", pid, s))
+			// 控制是否启用HTTP保持活动，默认情况下始终启用保持活动，只有资源受限的环境或服务器在关闭过程中才应禁用它们
+			srv.SetKeepAlivesEnabled(false)
 
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 
-			// 控制是否启用HTTP保持活动，默认情况下始终启用保持活动，只有资源受限的环境或服务器在关闭过程中才应禁用它们
-			srv.SetKeepAlivesEnabled(false)
-
+			logAndPushMsg(zl, fmt.Sprintf("server(%d) is shutting down(%v)...", pid, s))
+			
 			if err := srv.Shutdown(ctx); err != nil {
 				// 关闭服务失败则重新恢复
 				srv.SetKeepAlivesEnabled(true)

@@ -26,5 +26,5 @@ var (
 	SendMaxTimeout                  = 5 * time.Second
 	HttpServerReadTimeout           = 10 * time.Second
 	HttpServerWriteTimeout          = 15 * time.Second
-	HttpServerShutDownTimeout       = 30 * time.Second
+	HttpServerShutDownTimeout       = 15 * time.Second
 )

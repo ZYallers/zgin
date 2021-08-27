@@ -79,7 +79,7 @@ statusFun(){
 
     echoFun "ps process:" title
     if [[ `pgrep ${name}|wc -l` -gt 0 ]];then
-        ps -p $(pgrep ${name}|sed ':t;N;s/\n/,/;b t') -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,command
+        ps -p $(pgrep ${name}|sed ':t;N;s/\n/,/;b t'|sed -n '1h;1!H;${g;s/\n/,/g;p;}') -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,command
     fi
 
     echoFun "lsof process:" title
@@ -203,14 +203,12 @@ reloadFun(){
     port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
     if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -le 0 ]];then
         echoFun "$name($httpServerAddr) service is not running" err
-        exit 1
     else
         echoFun "$name($httpServerAddr) service is running..." ok
         # 检查健康接口是否访问正常
         respHttpCode=`curl -m 3 -s -w "%{http_code}" "http://{$httpServerAddr}/health"`
         if [[ "${respHttpCode}" != 'ok200' ]];then
             echoFun "curl 'http://$httpServerAddr/health' error: ($respHttpCode)" err
-            exit 1
         else
             echoFun "curl 'http://$httpServerAddr/health' succeed" ok
         fi

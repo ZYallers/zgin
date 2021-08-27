@@ -96,6 +96,11 @@ func StatsVizRegister(relativePath string, accounts gin.Accounts) {
 // ***************************************************** Server Listen ********************************************** //
 
 func ListenAndServe(readTimeout, writeTimeout, shutdownTimeout time.Duration) {
-	tool.Graceful(&http.Server{Addr: *app.HttpServerAddr, Handler: app.Engine, ReadTimeout: readTimeout,
-		WriteTimeout: writeTimeout}, app.Logger, shutdownTimeout)
+	srv := &http.Server{
+		Addr:         *app.HttpServerAddr,
+		Handler:      app.Engine,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+	}
+	tool.Graceful(srv, app.Logger, shutdownTimeout)
 }

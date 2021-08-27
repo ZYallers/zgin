@@ -217,19 +217,49 @@ reloadFun(){
     fi
 }
 
+forceKillNotice(){
+    app="App: $name"
+    listen="Listen: 0.0.0.0:$port"
+
+    hn=`hostname`
+    hostName="HostName: $hn"
+
+    ip=`ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:"`
+    sip="SystemIP: $ip"
+
+    d=`date "+%Y/%m/%d %H:%M:%S"`
+    time="Time: $d"
+
+    title="service $name has been killed for 30s and is ready to be forcibly killed"
+    sep="---------------------------"
+    content="$title\n$sep\n$app\n$listen\n$hostName\n$sip\n$time"
+
+    token='0d10a39901249e43fe66065f55449e17df7bc788617edd5dbcaf77396668be7b'
+    curl -o /dev/null -m 3 -s "https://oapi.dingtalk.com/robot/send?access_token=$token" \
+            -H 'Content-Type: application/json' \
+            -d "{\"msgtype\": \"text\",\"text\": {\"content\":\"$content\"}}"
+}
+
 quitFun(){
     addr=$1
     port=`echo ${addr}|awk -F ':' '{print $2}'`
 
-    counter=1
+    counter=0
     while true;
     do
         pid=`lsof -i tcp:${port}|grep LISTEN|awk '{print $2}'`
         if [[ ${pid} -gt 0 ]];then
-            echoFun "killing service $name($port), pid($pid), $counter tried" tip
-            kill ${pid}
-            counter=$(($counter+1))
-            sleep 1s
+            if [[ ${counter} -ge 30 ]];then
+                echoFun "service $name has been killed for 30s and is ready to be forcibly killed" tip
+                forceKillNotice
+                kill -9 ${pid}
+                break
+            else
+                counter=$(($counter+1))
+                echoFun "killing service $name($port), pid($pid), $counter tried" tip
+                kill ${pid}
+                sleep 1s
+            fi
         else
             echoFun "$name($port) service is stopped" ok
             break

@@ -29,14 +29,26 @@ echoFun(){
 
 helpFun(){
     echoFun "操作:" title
-    echoFun "    status [httpAddr(监听IP:Port)]          查看服务状态" tip
-    echoFun "    sync                                    同步服务vendor资源" tip
-    echoFun "    build [branch(分支)]                    编译生成服务程序" tip
-    echoFun "    reload [httpAddr(监听IP:Port)]          平滑重启服务" tip
-    echoFun "    quit [httpAddr(监听IP:Port)]            停止服务" tip
-    echoFun "    help                                    查看命令的帮助信息" tip
+    echoFun "  status               查看服务状态" tip
+    echoFun "  sync                 同步服务vendor资源" tip
+    echoFun "  build                编译生成服务程序" tip
+    echoFun "  reload               平滑重启服务" tip
+    echoFun "  quit                 停止服务" tip
+    echoFun "  help                 查看命令的帮助信息" tip
     echoFun "有关某个操作的详细信息，请使用 help 命令查看" tip
     exit 0
+}
+
+syncFun(){
+    cd ./src
+    echoFun "go mod vendor:" title
+    if [[ ! -f "./go.mod" ]];then
+        go mod init src
+    fi
+    go mod tidy
+    rm -rf ./vendor
+    go mod vendor
+    echoFun "go mod vendor finished" ok
 }
 
 initFun(){
@@ -52,14 +64,8 @@ initFun(){
     fi
     echoFun "name: $name" tip
 
-    if [[ "$1" == "" ]];then
-        httpServerAddr=`cat ${appConfigFile}|grep "HttpServerDefaultAddr"|awk -F '"' '{print $2}'`
-        echoFun "httpServerAddr[httpServerDefaultAddr]: $httpServerAddr" tip
-    else
-        httpServerAddr=$1
-        echoFun "httpServerAddr[shellArgs]: $httpServerAddr" tip
-    fi
-
+    httpServerAddr=`cat ${appConfigFile}|grep "HttpServerDefaultAddr"|awk -F '"' '{print $2}'`
+    echoFun "httpServerAddr: $httpServerAddr" tip
     if [[ "$httpServerAddr" == "" ]];then
         echoFun "httpServerAddr is empty" err
         exit 1
@@ -70,13 +76,10 @@ initFun(){
         echoFun "logDir is null" err
         exit 1
     fi
-
     echoFun "logDir: $logDir" tip
 }
 
 statusFun(){
-    initFun $1
-
     echoFun "ps process:" title
     if [[ `pgrep ${name}|wc -l` -gt 0 ]];then
         ps -p $(pgrep ${name}|sed ':t;N;s/\n/,/;b t'|sed -n '1h;1!H;${g;s/\n/,/g;p;}') -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,command
@@ -85,20 +88,6 @@ statusFun(){
     echoFun "lsof process:" title
     port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
     lsof -i:${port}
-}
-
-syncFun(){
-    initFun
-    cd ./src
-
-    echoFun "go mod vendor:" title
-    if [[ ! -f "./go.mod" ]];then
-        go mod init src
-    fi
-    go mod tidy
-    rm -rf ./vendor
-    go mod vendor
-    echoFun "go mod vendor finished" ok
 }
 
 buildFun(){
@@ -117,8 +106,6 @@ buildFun(){
         git pull # 拉取最新版本
         echoFun "git pull [$branch] finish" ok
     fi
-
-    initFun
 
     echoFun "build runner:" title
     cd ./src
@@ -173,8 +160,6 @@ sendMsg(){
 }
 
 reloadFun(){
-    initFun $1
-
     echoFun "runner reloading:" title
 
     if [[ ! -f "./bin/$name" ]];then
@@ -202,13 +187,13 @@ reloadFun(){
         chmod u+x ./bin/${name}
     fi
 
-    quitFun ${httpServerAddr}
+    quitFun
 
     # 防止Jenkins默认会在Build结束后Kill掉所有的衍生进程
     export BUILD_ID=dontKillMe
 
     nohup ./bin/${name} -http.addr=${httpServerAddr} >> ${logfile} 2>&1 &
-    echoFun "$name($httpServerAddr) is reloaded, pid: `echo $!`" ok
+    echoFun "service $name($httpServerAddr) is reloaded, pid: `echo $!`" ok
 
     # 检查健康接口是否访问正常
     sleep 3s
@@ -224,9 +209,7 @@ reloadFun(){
 }
 
 quitFun(){
-    addr=$1
-    port=`echo ${addr}|awk -F ':' '{print $2}'`
-
+    port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
     counter=0
     while true;
     do
@@ -244,7 +227,7 @@ quitFun(){
                 sleep 1s
             fi
         else
-            echoFun "$name($port) service is stopped" ok
+            echoFun "service $name($port) service is stopped" ok
             break
         fi
     done
@@ -258,7 +241,7 @@ while getopts ':d' OPT; do
             shift 1;
         ;;
         ?)  #当有不认识的选项的时候arg为?
-            echo "unkonw argument"
+            echo "unknown argument"
             exit 1
         ;;
     esac
@@ -268,24 +251,27 @@ cmd=$1
 arg1=$2
 arg2=$3
 
-case ${cmd} in
-        status)
-            statusFun ${arg1}
-        ;;
-        sync)
-            syncFun
-        ;;
-        build)
-            buildFun ${arg1} ${arg2}
-        ;;
-        quit)
-            initFun ${arg1}
-            quitFun ${httpServerAddr}
-        ;;
-        reload)
-            reloadFun ${arg1}
-        ;;
-        *)
-            helpFun
-        ;;
+case $1 in
+    status)
+        initFun
+        statusFun
+    ;;
+    build)
+        initFun
+        buildFun $2 $3
+    ;;
+    quit)
+        initFun
+        quitFun
+    ;;
+    reload)
+        initFun
+        reloadFun
+    ;;
+    sync)
+        syncFun
+    ;;
+    *)
+        helpFun
+    ;;
 esac

@@ -162,7 +162,7 @@ buildFun(){
 
 sendMsg(){
     app="App: $name"
-    listen="Listen: 0.0.0.0:$port"
+    listen="Listen: 0.0.0.0:`echo ${httpServerAddr}|awk -F ':' '{print $2}'`"
     hostName="HostName: $(hostname)"
     sip="SystemIP: $(ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:")"
     time="Time: $(date "+%Y/%m/%d %H:%M:%S")"

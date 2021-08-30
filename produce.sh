@@ -212,13 +212,14 @@ reloadFun(){
 
     # 检查健康接口是否访问正常
     sleep 3s
-    resp=`curl -m 3 -s -w "%{http_code}" "http://$httpServerAddr/health"`
-    if [[ "${resp}" != 'ok200' ]];then
-        echoFun "curl 'http://$httpServerAddr/health' error: ($resp)" err
-        sendMsg "curl 'http://$httpServerAddr/health' error: ($resp)"
-    else
+    code=`curl -o /dev/null -m 3 -s -w "%{http_code}" "http://$httpServerAddr/health"`
+    resp=`curl -m 3 -s "http://$httpServerAddr/health" | xargs echo -n`
+    if [[ "${code}" == '200' && "${resp}" == 'ok' ]];then
         echoFun "curl 'http://$httpServerAddr/health' succeed" ok
         sendMsg "curl 'http://$httpServerAddr/health' succeed"
+    else
+        echoFun "curl 'http://$httpServerAddr/health' error: (httpCode: $code, response: $resp)" err
+        sendMsg "curl 'http://$httpServerAddr/health' error: (httpCode: $code, response: $resp)"
     fi
 }
 

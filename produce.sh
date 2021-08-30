@@ -160,6 +160,18 @@ buildFun(){
     echoFun "build runner ($(pwd)/bin/${name}) finished" ok
 }
 
+sendMsg(){
+    app="App: $name"
+    listen="Listen: 0.0.0.0:$port"
+    hostName="HostName: $(hostname)"
+    sip="SystemIP: $(ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:")"
+    time="Time: $(date "+%Y/%m/%d %H:%M:%S")"
+
+    url='https://oapi.dingtalk.com/robot/send?access_token=0d10a39901249e43fe66065f55449e17df7bc788617edd5dbcaf77396668be7b'
+    content="$1\n---------------------------\n$app\n$listen\n$hostName\n$sip\n$time"
+    curl -o /dev/null -m 3 -s "$url" -H 'Content-Type: application/json' -d "{\"msgtype\": \"text\",\"text\": {\"content\":\"$content\"}}"
+}
+
 reloadFun(){
     initFun $1
 
@@ -198,44 +210,16 @@ reloadFun(){
     nohup ./bin/${name} -http.addr=${httpServerAddr} >> ${logfile} 2>&1 &
     echoFun "$name($httpServerAddr) is reloaded, pid: `echo $!`" ok
 
-    # 检查对应服务端口是否已经正常启动
+    # 检查健康接口是否访问正常
     sleep 3s
-    port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
-    if [[ `lsof -i tcp:${port}|grep LISTEN|wc -l` -le 0 ]];then
-        echoFun "$name($httpServerAddr) service is not running" err
+    resp=`curl -m 3 -s -w "%{http_code}" "http://$httpServerAddr/health"`
+    if [[ "${resp}" != 'ok200' ]];then
+        echoFun "curl 'http://$httpServerAddr/health' error: ($resp)" err
+        sendMsg "curl 'http://$httpServerAddr/health' error: ($resp)"
     else
-        echoFun "$name($httpServerAddr) service is running..." ok
-        # 检查健康接口是否访问正常
-        respHttpCode=`curl -m 3 -s -w "%{http_code}" "http://{$httpServerAddr}/health"`
-        if [[ "${respHttpCode}" != 'ok200' ]];then
-            echoFun "curl 'http://$httpServerAddr/health' error: ($respHttpCode)" err
-        else
-            echoFun "curl 'http://$httpServerAddr/health' succeed" ok
-        fi
+        echoFun "curl 'http://$httpServerAddr/health' succeed" ok
+        sendMsg "curl 'http://$httpServerAddr/health' succeed"
     fi
-}
-
-forceKillNotice(){
-    app="App: $name"
-    listen="Listen: 0.0.0.0:$port"
-
-    hn=`hostname`
-    hostName="HostName: $hn"
-
-    ip=`ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:"`
-    sip="SystemIP: $ip"
-
-    d=`date "+%Y/%m/%d %H:%M:%S"`
-    time="Time: $d"
-
-    title="service $name has been killed for 30s and is ready to be forcibly killed"
-    sep="---------------------------"
-    content="$title\n$sep\n$app\n$listen\n$hostName\n$sip\n$time"
-
-    token='0d10a39901249e43fe66065f55449e17df7bc788617edd5dbcaf77396668be7b'
-    curl -o /dev/null -m 3 -s "https://oapi.dingtalk.com/robot/send?access_token=$token" \
-            -H 'Content-Type: application/json' \
-            -d "{\"msgtype\": \"text\",\"text\": {\"content\":\"$content\"}}"
 }
 
 quitFun(){
@@ -248,14 +232,14 @@ quitFun(){
         pid=`lsof -i tcp:${port}|grep LISTEN|awk '{print $2}'`
         if [[ ${pid} -gt 0 ]];then
             if [[ ${counter} -ge 30 ]];then
-                echoFun "service $name has been killed for 30s and is ready to be forcibly killed" tip
-                forceKillNotice
                 kill -9 ${pid}
+                echoFun "service $name has been killed for 30s and is ready to be forcibly killed" tip
+                sendMsg "service $name has been killed for 30s and is ready to be forcibly killed"
                 break
             else
+                kill ${pid}
                 counter=$(($counter+1))
                 echoFun "killing service $name($port), pid($pid), $counter tried" tip
-                kill ${pid}
                 sleep 1s
             fi
         else

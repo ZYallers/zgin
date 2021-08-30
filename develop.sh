@@ -81,7 +81,7 @@ statusFun(){
 
     echoFun "ps process:" title
     if [[ `pgrep ${freshName}|wc -l` -gt 0 ]];then
-        ps -p $(pgrep ${freshName}|sed ':t;N;s/\n/,/;b t') -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,command
+        ps -p $(pgrep ${name}|sed ':t;N;s/\n/,/;b t'|sed -n '1h;1!H;${g;s/\n/,/g;p;}') -o user,pid,ppid,%cpu,%mem,vsz,rss,tty,stat,start,time,command
     fi
     echoFun "lsof process:" title
     port=`echo ${httpServerAddr}|awk -F ':' '{print $2}'`
@@ -90,9 +90,6 @@ statusFun(){
 
 syncFun(){
     initFun
-
-    export GO111MODULE=on
-    export GOPROXY=https://goproxy.cn
 
     echoFun "go get fresh:" title
     if [[ ! -f "../bin/$freshName" ]];then

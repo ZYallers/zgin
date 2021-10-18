@@ -7,6 +7,7 @@ import (
 	"github.com/ZYallers/zgin/libraries/logger"
 	"github.com/ZYallers/zgin/libraries/middleware"
 	"github.com/ZYallers/zgin/libraries/tool"
+	"github.com/ZYallers/zgin/route"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"net/http"
@@ -54,7 +55,7 @@ func MiddlewareGlobalRegister() {
 	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
 }
 
-func MiddlewareCustomRegister(api *app.Restful) {
+func MiddlewareCustomRegister(api *route.Restful) {
 	app.Engine.Use(middleware.AuthCheck(api))
 }
 

@@ -2,15 +2,17 @@ package zgin
 
 import (
 	"github.com/ZYallers/zgin/app"
-	v000T "github.com/ZYallers/zgin/controller/v000/test"
+	v000 "github.com/ZYallers/zgin/controller/v000/test"
+	"github.com/ZYallers/zgin/route"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"testing"
 	"time"
 )
 
-var Api = &app.Restful{
-	"test/isok": {{Method: map[string]byte{http.MethodGet: 1}, Handler: func(c *gin.Context) { v000T.Index(c).CheckOk() }}},
+func init() {
+	route.Merge(route.Restful{
+		"test/isok": {{Http: "GET,POST", Method: "CheckOk", Handler: &v000.Index{}}},
+	})
 }
 
 func TestServer(t *testing.T) {
@@ -25,6 +27,6 @@ func TestServer(t *testing.T) {
 		app.HttpServerWriteTimeout = time.Minute
 	}
 	SessionClientRegister(nil)
-	MiddlewareCustomRegister(Api)
+	MiddlewareCustomRegister(route.Api)
 	ListenAndServe(app.HttpServerReadTimeout, app.HttpServerWriteTimeout, app.HttpServerShutDownTimeout)
 }

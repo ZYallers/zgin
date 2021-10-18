@@ -7,9 +7,24 @@ import (
 	"strconv"
 )
 
-// Controller 基类
+type IController interface {
+	SetContext(*gin.Context)
+}
+
+// Controller
 type Controller struct {
 	Ctx *gin.Context
+}
+
+// SetContext
+func (c *Controller) SetContext(ctx *gin.Context) {
+	c.Ctx = ctx
+}
+
+// DumpRequest
+func (c *Controller) DumpRequest() string {
+	reqStr, _ := c.Ctx.Get("gin-gonic/gin/reqstr")
+	return reqStr.(string)
 }
 
 // Json 输出方法

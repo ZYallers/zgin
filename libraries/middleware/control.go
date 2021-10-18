@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/ZYallers/zgin/app"
+	"github.com/ZYallers/zgin/route"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
 	"net/http"
@@ -14,16 +15,16 @@ import (
 )
 
 // AuthCheck
-func AuthCheck(api *app.Restful) gin.HandlerFunc {
+func AuthCheck(api *route.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var rh *app.RestHandler
-		if rh = versionCompare(ctx, api); rh == nil {
+		var rest *route.RestHandler
+		if rest = versionCompare(ctx, api); rest == nil {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
 			return
 		}
 
 		// 签名验证
-		if rh.Signed && !signCheck(ctx) {
+		if rest.Signed && !signCheck(ctx) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
 			return
 		}
@@ -31,7 +32,7 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 		token := queryPostForm(ctx, app.Session.TokenKey)
 
 		// 登录验证
-		if rh.Logged && !loginCheck(token) {
+		if rest.Logged && !loginCheck(token) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
@@ -41,15 +42,15 @@ func AuthCheck(api *app.Restful) gin.HandlerFunc {
 			parseSessionToken(ctx, token)
 		}
 
-		if rh.Handler != nil {
-			rh.Handler(ctx)
-		}
+		// 调用对应控制器方法
+		rest.Handler.SetContext(ctx)
+		rest.CallMethod()
 	}
 }
 
 // versionCompare
-func versionCompare(ctx *gin.Context, api *app.Restful) *app.RestHandler {
-	var handlers []app.RestHandler
+func versionCompare(ctx *gin.Context, api *route.Restful) *route.RestHandler {
+	var handlers []route.RestHandler
 
 	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
 		return nil
@@ -61,12 +62,10 @@ func versionCompare(ctx *gin.Context, api *app.Restful) *app.RestHandler {
 		}
 	}
 
-	version, method := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
+	version, httpMethod := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
 	for _, handler := range handlers {
-		if handler.Method == nil {
-			return nil
-		}
-		if _, ok := handler.Method[method]; !ok {
+		hmd := handler.GetHttpMethod()
+		if _, exist := hmd[httpMethod]; !exist {
 			return nil
 		}
 		if handler.Version == "" || version == handler.Version {

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	reqStrKey = `gin-gonic/gin/reqstr`
+	reqStrKey = "gin-gonic/gin/reqstr"
 )
 
 // Push404Handler

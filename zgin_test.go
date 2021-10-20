@@ -9,10 +9,8 @@ import (
 	"time"
 )
 
-func init() {
-	route.Merge(route.Restful{
-		"test/isok": {{Http: "GET,POST", Method: "CheckOk", Handler: &v000.Index{}}},
-	})
+var api = route.Restful{
+	"test/isok": {{Http: "GET,POST", Method: "CheckOk", Handler: &v000.Index{}}},
 }
 
 func TestServer(t *testing.T) {
@@ -27,6 +25,6 @@ func TestServer(t *testing.T) {
 		app.HttpServerWriteTimeout = time.Minute
 	}
 	SessionClientRegister(nil)
-	MiddlewareCustomRegister(route.Api)
+	MiddlewareCustomRegister(api)
 	ListenAndServe(app.HttpServerReadTimeout, app.HttpServerWriteTimeout, app.HttpServerShutDownTimeout)
 }

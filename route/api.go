@@ -8,39 +8,39 @@ import (
 	"sync"
 )
 
-var (
-	Api *Restful
-	mu  sync.Mutex
-)
+var mu sync.Mutex
 
-func Merge(restful Restful) {
+func Merge(in ...Restful) Restful {
 	mu.Lock()
 	defer mu.Unlock()
-	api := Restful{}
-	if Api != nil {
-		api = *Api
-	}
-	for k, restHandlers := range restful {
-		for i, rh := range restHandlers {
-			if rh.Http == "" || rh.Handler == nil || rh.Method == "" {
-				panic(fmt.Errorf("restHandler attribute assignment is invalid: %+v", rh))
-			}
-			hmdSplit := strings.Split(rh.Http, ",")
-			hmd := make(map[string]byte, len(hmdSplit))
-			for _, httpMethod := range hmdSplit {
-				hmd[strings.ToUpper(httpMethod)] = 1
-			}
-			rh.SetHttpMethod(hmd)
 
-			typeOf := reflect.TypeOf(rh.Handler)
-			if m, exist := typeOf.MethodByName(tool.StrFirstToUpper(rh.Method)); !exist {
-				panic(fmt.Errorf("restHandler.Method does not exist: %+v\n", rh))
-			} else {
-				rh.SetMethod(m.Func)
+	res := Restful{}
+	for _, restful := range in {
+		for path, restHandlers := range restful {
+			if val, exist := res[path]; exist {
+				panic(fmt.Errorf("restful path \"%s\" already exists: %+v", path, val))
 			}
-			restHandlers[i] = rh
+			for i, rh := range restHandlers {
+				if rh.Http == "" || rh.Handler == nil || rh.Method == "" {
+					panic(fmt.Errorf("restHandler attribute assignment is invalid: %+v", rh))
+				}
+				hmdSplit := strings.Split(rh.Http, ",")
+				hmd := make(map[string]byte, len(hmdSplit))
+				for _, httpMethod := range hmdSplit {
+					hmd[strings.ToUpper(httpMethod)] = 1
+				}
+				rh.SetHttpMethod(hmd)
+
+				methodName := tool.StrFirstToUpper(rh.Method)
+				if _, exist := reflect.TypeOf(rh.Handler).MethodByName(methodName); !exist {
+					panic(fmt.Errorf("restHandler.Method does not exist: %+v\n", rh))
+				} else {
+					rh.SetMethod(reflect.ValueOf(rh.Handler).MethodByName(methodName))
+				}
+				restHandlers[i] = rh
+			}
+			res[path] = restHandlers
 		}
-		api[k] = restHandlers
 	}
-	Api = &api
+	return res
 }

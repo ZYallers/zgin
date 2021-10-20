@@ -15,7 +15,7 @@ import (
 )
 
 // AuthCheck
-func AuthCheck(api *route.Restful) gin.HandlerFunc {
+func AuthCheck(api route.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var rest *route.RestHandler
 		if rest = versionCompare(ctx, api); rest == nil {
@@ -49,13 +49,13 @@ func AuthCheck(api *route.Restful) gin.HandlerFunc {
 }
 
 // versionCompare
-func versionCompare(ctx *gin.Context, api *route.Restful) *route.RestHandler {
+func versionCompare(ctx *gin.Context, api route.Restful) *route.RestHandler {
 	var handlers []route.RestHandler
 
 	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
 		return nil
 	} else {
-		if hd, ok := (*api)[path]; !ok {
+		if hd, ok := api[path]; !ok {
 			return nil
 		} else {
 			handlers = hd

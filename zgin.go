@@ -55,7 +55,7 @@ func MiddlewareGlobalRegister() {
 	app.Engine.Use(middleware.RecoveryWithZap(app.Logger), middleware.LoggerWithZap(app.Logger))
 }
 
-func MiddlewareCustomRegister(api *route.Restful) {
+func MiddlewareCustomRegister(api route.Restful) {
 	app.Engine.Use(middleware.AuthCheck(api))
 }
 

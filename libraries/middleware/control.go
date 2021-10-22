@@ -51,7 +51,6 @@ func AuthCheck(api route.Restful) gin.HandlerFunc {
 // versionCompare
 func versionCompare(ctx *gin.Context, api route.Restful) *route.RestHandler {
 	var handlers []route.RestHandler
-
 	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
 		return nil
 	} else {
@@ -61,7 +60,6 @@ func versionCompare(ctx *gin.Context, api route.Restful) *route.RestHandler {
 			handlers = hd
 		}
 	}
-
 	version, httpMethod := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
 	for _, handler := range handlers {
 		hmd := handler.GetHttpMethod()

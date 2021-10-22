@@ -10,6 +10,11 @@ import (
 
 type Index struct {
 	mvcs.Controller
+	tag struct {
+		CheckOk func() `path:"test/isok" http:"get,post"`
+		One     func() `path:"test/one" http:"get,post" login:"on"`
+		Two     func() `path:"test/two" http:"get,post" sort:"1"`
+	}
 }
 
 func (i *Index) CheckOk() {
@@ -19,4 +24,12 @@ func (i *Index) CheckOk() {
 		"client_ip": i.Ctx.ClientIP(),
 		"request":   strings.Split(i.DumpRequest(), "\r\n"),
 	})
+}
+
+func (i *Index) One() {
+	i.Json(http.StatusOK, "ok", gin.H{"name": "One"})
+}
+
+func (i *Index) Two() {
+	i.Json(http.StatusOK, "ok", gin.H{"name": "v000.Index.Two"})
 }

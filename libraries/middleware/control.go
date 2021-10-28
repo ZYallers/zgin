@@ -43,8 +43,7 @@ func AuthCheck(api route.Restful) gin.HandlerFunc {
 		}
 
 		// 调用对应控制器方法
-		rest.Handler.SetContext(ctx)
-		rest.CallMethod()
+		rest.CallMethod(ctx)
 	}
 }
 

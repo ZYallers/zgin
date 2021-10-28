@@ -2,6 +2,7 @@ package route
 
 import (
 	"github.com/ZYallers/zgin/libraries/mvcs"
+	"github.com/gin-gonic/gin"
 	"reflect"
 )
 
@@ -10,16 +11,15 @@ type RestHandlers []RestHandler
 type Restful map[string]RestHandlers
 
 type RestHandler struct {
-	Sort       int              // Sort
-	Signed     bool             // Signed
-	Logged     bool             // Logged
-	Path       string           // Path
-	Version    string           // Version
-	Http       string           // Http
-	Method     string           // Method
-	Handler    mvcs.IController // Handler
-	method     reflect.Value    // Method
-	http       map[string]byte  // http
+	Sort    int              // Sort
+	Signed  bool             // Signed
+	Logged  bool             // Logged
+	Path    string           // Path
+	Version string           // Version
+	Http    string           // Http
+	Method  string           // Method
+	Handler mvcs.IController // Handler
+	http    map[string]byte  // http
 }
 
 // RestHandlers 实现sort SDK中的Interface接口
@@ -49,6 +49,9 @@ func (rh *RestHandler) GetHttpMethod() map[string]byte {
 }
 
 // CallMethod
-func (rh *RestHandler) CallMethod() {
-	rh.method.Call(nil)
+func (rh *RestHandler) CallMethod(ctx *gin.Context) {
+	ptr := reflect.New(reflect.TypeOf(rh.Handler).Elem())
+	ptr.Elem().Set(reflect.ValueOf(rh.Handler).Elem())
+	ptr.Elem().FieldByName("Ctx").Set(reflect.ValueOf(ctx))
+	ptr.MethodByName(rh.Method).Call(nil)
 }

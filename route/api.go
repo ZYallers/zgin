@@ -34,8 +34,6 @@ func Merge(in ...Restful) Restful {
 				handlerValue := reflect.ValueOf(rh.Handler)
 				if _, exist := handlerValue.Type().MethodByName(rh.Method); !exist {
 					panic(fmt.Errorf("restHandler.Method does not exist: %+v\n", rh))
-				} else {
-					rh.method = handlerValue.MethodByName(rh.Method)
 				}
 				restHandlers[i] = rh
 			}
@@ -84,20 +82,15 @@ func Register(des Restful, controllers ...mvcs.IController) Restful {
 			for _, httpMethod := range httSplit {
 				httpMap[strings.ToUpper(httpMethod)] = 1
 			}
-
-			ptr := reflect.New(contValue.Type().Elem())
-			ptr.Elem().Set(contValue.Elem())
-			newController := ptr.Interface().(mvcs.IController)
-
 			resHandler := RestHandler{
 				Path:    path,
 				Http:    htt,
-				Handler: newController,
+				http:    httpMap,
+				Handler: controller,
+				Method:  methodName,
 				Version: fieldTagVal.Get("ver"),
 				Signed:  fieldTagVal.Get("sign") == "on",
 				Logged:  fieldTagVal.Get("login") == "on",
-				http:    httpMap,
-				method:  reflect.ValueOf(newController).MethodByName(methodName),
 			}
 			if sortStr := fieldTagVal.Get("sort"); sortStr != "" {
 				if sortInt, err := strconv.Atoi(sortStr); err != nil {

@@ -6,7 +6,6 @@ import (
 	v110 "github.com/ZYallers/zgin/controller/v110"
 	"github.com/ZYallers/zgin/route"
 	"github.com/gin-gonic/gin"
-	"log"
 	"testing"
 	"time"
 )
@@ -41,12 +40,12 @@ func TestServer(t *testing.T) {
 		app.HttpServerWriteTimeout = time.Minute
 	}
 	SessionClientRegister(nil)
-	for path, restHandlers := range api {
+	/*for path, restHandlers := range api {
 		log.Printf("path: %s\n", path)
 		for i, resHandler := range restHandlers {
 			log.Printf("handlers.%d: %+v\n", i, resHandler)
 		}
-	}
+	}*/
 	MiddlewareCustomRegister(api)
 	ListenAndServe(app.HttpServerReadTimeout, app.HttpServerWriteTimeout, app.HttpServerShutDownTimeout)
 }

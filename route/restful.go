@@ -44,14 +44,16 @@ func (rh RestHandlers) Less(i, j int) bool {
 }
 
 // GetHttpMethod
-func (rh *RestHandler) GetHttpMethod() map[string]byte {
-	return rh.http
+func (h *RestHandler) GetHttpMethod() map[string]byte {
+	return h.http
 }
 
 // CallMethod
-func (rh *RestHandler) CallMethod(ctx *gin.Context) {
-	ptr := reflect.New(reflect.TypeOf(rh.Handler).Elem())
-	ptr.Elem().Set(reflect.ValueOf(rh.Handler).Elem())
-	ptr.Elem().FieldByName("Ctx").Set(reflect.ValueOf(ctx))
-	ptr.MethodByName(rh.Method).Call(nil)
+func (h *RestHandler) CallMethod(ctx *gin.Context) {
+	v := reflect.ValueOf(h.Handler)
+	ptr := reflect.New(v.Type().Elem())
+	ptr.Elem().Set(v.Elem())
+	ptr.Interface().(mvcs.IController).SetContext(ctx)
+	//ptr.Elem().FieldByName("Ctx").Set(reflect.ValueOf(ctx))
+	ptr.MethodByName(h.Method).Call(nil)
 }

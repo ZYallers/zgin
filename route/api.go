@@ -31,8 +31,8 @@ func Merge(in ...Restful) Restful {
 					hmd[strings.ToUpper(httpMethod)] = 1
 				}
 				rh.http = hmd
-				handlerValue := reflect.ValueOf(rh.Handler)
-				if _, exist := handlerValue.Type().MethodByName(rh.Method); !exist {
+				handlerValueOf := reflect.ValueOf(rh.Handler)
+				if _, exist := handlerValueOf.Type().MethodByName(rh.Method); !exist {
 					panic(fmt.Errorf("restHandler.Method does not exist: %+v\n", rh))
 				}
 				restHandlers[i] = rh
@@ -51,12 +51,12 @@ func Register(des Restful, controllers ...mvcs.IController) Restful {
 		res[path] = restHandlers
 	}
 	for _, controller := range controllers {
-		contValue := reflect.ValueOf(controller)
-		contName := contValue.Elem().Type().Name()
-		if _, exist := contValue.Elem().Type().FieldByName("tag"); !exist {
+		controllerValueOf := reflect.ValueOf(controller)
+		controllerName := controllerValueOf.Elem().Type().Name()
+		if _, exist := controllerValueOf.Elem().Type().FieldByName("tag"); !exist {
 			continue
 		}
-		tagVal := contValue.Elem().FieldByName("tag")
+		tagVal := controllerValueOf.Elem().FieldByName("tag")
 		if tagVal.Kind() != reflect.Struct {
 			continue
 		}
@@ -68,14 +68,14 @@ func Register(des Restful, controllers ...mvcs.IController) Restful {
 			fieldTagVal := tagVal.Type().Field(i).Tag
 			path := fieldTagVal.Get("path")
 			if path == "" {
-				panic(fmt.Errorf("restHandler.Path is empty: %s.%s\n", contName, methodName))
+				panic(fmt.Errorf("restHandler.Path is empty: %s.%s\n", controllerName, methodName))
 			}
 			htt := fieldTagVal.Get("http")
 			if htt == "" {
-				panic(fmt.Errorf("restHandler.Http is empty: %s.%s\n", contName, methodName))
+				panic(fmt.Errorf("restHandler.Http is empty: %s.%s\n", controllerName, methodName))
 			}
-			if _, exist := contValue.Type().MethodByName(methodName); !exist {
-				panic(fmt.Errorf("restHandler.Method does not exist: %s.%s\n", contName, methodName))
+			if _, exist := controllerValueOf.Type().MethodByName(methodName); !exist {
+				panic(fmt.Errorf("restHandler.Method does not exist: %s.%s\n", controllerName, methodName))
 			}
 			httSplit := strings.Split(htt, ",")
 			httpMap := make(map[string]byte, len(httSplit))

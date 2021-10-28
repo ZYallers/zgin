@@ -90,7 +90,7 @@ func RecoveryWithZap(zl *zap.Logger) gin.HandlerFunc {
 				data := gin.H{"error": err}
 				if gin.IsDebugging() {
 					data["request"] = reqStr
-					data["stack"] = stacks
+					data["stack"] = strings.Split(stacks, "\n")
 				}
 				ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusInternalServerError,
 					"msg": "server internal error", "data": data})

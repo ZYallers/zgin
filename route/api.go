@@ -59,11 +59,11 @@ func Register(des Restful, controllers ...mvcs.IController) Restful {
 			continue
 		}
 		tagVal := contValue.Elem().FieldByName("tag")
-		if tagVal.Kind().String() != "struct" {
+		if tagVal.Kind() != reflect.Struct {
 			continue
 		}
 		for i := 0; i < tagVal.NumField(); i++ {
-			if tagVal.Field(i).Kind().String() != "func" {
+			if tagVal.Field(i).Kind() != reflect.Func {
 				continue
 			}
 			methodName := tagVal.Type().Field(i).Name
@@ -84,15 +84,20 @@ func Register(des Restful, controllers ...mvcs.IController) Restful {
 			for _, httpMethod := range httSplit {
 				httpMap[strings.ToUpper(httpMethod)] = 1
 			}
+
+			ptr := reflect.New(contValue.Type().Elem())
+			ptr.Elem().Set(contValue.Elem())
+			newController := ptr.Interface().(mvcs.IController)
+
 			resHandler := RestHandler{
 				Path:    path,
 				Http:    htt,
-				Handler: controller,
+				Handler: newController,
 				Version: fieldTagVal.Get("ver"),
 				Signed:  fieldTagVal.Get("sign") == "on",
 				Logged:  fieldTagVal.Get("login") == "on",
 				http:    httpMap,
-				method:  contValue.MethodByName(methodName),
+				method:  reflect.ValueOf(newController).MethodByName(methodName),
 			}
 			if sortStr := fieldTagVal.Get("sort"); sortStr != "" {
 				if sortInt, err := strconv.Atoi(sortStr); err != nil {

@@ -140,7 +140,7 @@ func NoRouteHandler(app *types.Zgin) {
 }
 
 func MiddlewareGlobalRegister(app *types.Zgin) {
-	app.Engine.Use(middleware.RecoveryWithZap(), middleware.LoggerWithZap(app))
+	app.Engine.Use(middleware.RecoveryWithZap(), middleware.LoggerWithZap(app.LogMaxTimeout, app.SendMaxTimeout))
 }
 
 func MiddlewareCustomRegister(app *types.Zgin, api route.Restful) {

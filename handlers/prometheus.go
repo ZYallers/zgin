@@ -6,9 +6,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"os"
 	"strings"
+	"sync"
 )
 
 var (
+	once    sync.Once
 	prom    = promhttp.Handler()
 	appInfo = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -20,7 +22,9 @@ var (
 )
 
 func PrometheusHandler(ctx *gin.Context, name string) {
-	prometheus.MustRegister(appInfo)
-	appInfo.WithLabelValues(name, strings.Join(os.Args, " ")).Inc()
+	once.Do(func() {
+		prometheus.MustRegister(appInfo)
+		appInfo.WithLabelValues(name, strings.Join(os.Args, " ")).Inc()
+	})
 	prom.ServeHTTP(ctx.Writer, ctx.Request)
 }

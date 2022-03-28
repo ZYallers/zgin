@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/logger"
+	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/funcs/dingtalk"
-	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net"
@@ -20,19 +20,19 @@ import (
 // LoggerWithZap returns a gin.HandlerFunc (middleware) that logs requests using uber-go/zap.
 // Requests with errors are logged using zap.Error().
 // Requests without errors are logged using zap.Info().
-func LoggerWithZap(app *types.Zgin) gin.HandlerFunc {
+func LoggerWithZap(logMaxTime, sendMaxTime time.Duration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		start := time.Now()
 		ctx.Next()
-		go func(ctx *gin.Context, runtime time.Duration) {
+		go func(ctx *gin.Context, runtime, log, send time.Duration) {
 			if len(ctx.Errors) > 0 {
-				reqStr := ctx.GetString(reqStrKey)
+				reqStr := ctx.GetString(consts.ReqStrKey)
 				for _, err := range ctx.Errors.Errors() {
 					logger.Use("context").Error(err)
 					dingtalk.PushContextMessage(ctx, err, reqStr, "", true)
 				}
 			}
-			if runtime >= app.LogMaxTimeout {
+			if runtime >= log {
 				logger.Use("timeout").Info(ctx.Request.URL.Path,
 					zap.Duration("runtime", runtime),
 					zap.String("proto", ctx.Request.Proto),
@@ -42,15 +42,14 @@ func LoggerWithZap(app *types.Zgin) gin.HandlerFunc {
 					zap.String("query", ctx.Request.URL.RawQuery),
 					zap.String("clientIP", nets.ClientIP(ctx.ClientIP())),
 					zap.Any("header", ctx.Request.Header),
-					zap.String("request", ctx.GetString(reqStrKey)),
+					zap.String("request", ctx.GetString(consts.ReqStrKey)),
 				)
 			}
-			if runtime >= app.SendMaxTimeout {
-				msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit",
-					ctx.Request.URL.Path, runtime, app.SendMaxTimeout)
-				dingtalk.PushContextMessage(ctx, msg, ctx.GetString(reqStrKey), "", false)
+			if runtime >= send {
+				msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit", ctx.Request.URL.Path, runtime, send)
+				dingtalk.PushContextMessage(ctx, msg, ctx.GetString(consts.ReqStrKey), "", false)
 			}
-		}(ctx.Copy(), time.Now().Sub(start))
+		}(ctx.Copy(), time.Now().Sub(start), logMaxTime, sendMaxTime)
 	}
 }
 
@@ -73,7 +72,7 @@ func RecoveryWithZap() gin.HandlerFunc {
 				}
 
 				errMsg := fmt.Sprintf("recovery from panic: %v", err)
-				reqStr := ctx.GetString(reqStrKey)
+				reqStr := ctx.GetString(consts.ReqStrKey)
 				stacks := string(debug.Stack())
 
 				dingtalk.PushContextMessage(ctx, errMsg, reqStr, stacks, true)
@@ -97,7 +96,7 @@ func RecoveryWithZap() gin.HandlerFunc {
 		}()
 
 		reqBytes, _ := httputil.DumpRequest(ctx.Request, true)
-		ctx.Set(reqStrKey, string(reqBytes))
+		ctx.Set(consts.ReqStrKey, string(reqBytes))
 		ctx.Next()
 	}
 }

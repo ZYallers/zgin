@@ -2,8 +2,7 @@ package restful
 
 import (
 	"fmt"
-	"github.com/ZYallers/zgin/utils/mvcs"
-	"github.com/ZYallers/zgin/utils/route"
+	"github.com/ZYallers/zgin/types"
 	"reflect"
 	"sort"
 	"strconv"
@@ -13,10 +12,10 @@ import (
 
 var mu2 sync.Mutex
 
-func Register(des route.Restful, controllers ...mvcs.IController) route.Restful {
+func Register(des types.Restful, controllers ...types.IController) types.Restful {
 	mu2.Lock()
 	defer mu2.Unlock()
-	res := route.Restful{}
+	res := types.Restful{}
 	for path, restHandlers := range des {
 		res[path] = restHandlers
 	}
@@ -52,7 +51,7 @@ func Register(des route.Restful, controllers ...mvcs.IController) route.Restful 
 			for _, httpMethod := range httSplit {
 				httpMap[strings.ToUpper(httpMethod)] = 1
 			}
-			resHandler := route.RestHandler{
+			resHandler := types.RestHandler{
 				Path:    path,
 				Http:    htt,
 				Https:   httpMap,

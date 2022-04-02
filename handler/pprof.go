@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"github.com/gin-gonic/gin"
@@ -50,8 +50,7 @@ func RouteRegister(rg *gin.RouterGroup, prefixOptions ...string) {
 }
 
 func pprofHandler(h http.HandlerFunc) gin.HandlerFunc {
-	handler := http.HandlerFunc(h)
 	return func(c *gin.Context) {
-		handler.ServeHTTP(c.Writer, c.Request)
+		h.ServeHTTP(c.Writer, c.Request)
 	}
 }

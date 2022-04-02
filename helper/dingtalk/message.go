@@ -3,23 +3,23 @@ package dingtalk
 import (
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
-	"github.com/ZYallers/zgin/funcs/vipers"
+	"github.com/ZYallers/zgin/helper/config"
 	"github.com/gin-gonic/gin"
 	"strings"
 	"time"
 )
 
-var (
-	headers = map[string]string{"Content-Type": "application/json;charset=utf-8"}
-)
+const timeout = 3 * time.Second
+
+var headers = map[string]string{"Content-Type": "application/json;charset=utf-8"}
 
 func PushSimpleMessage(msg string, isAtAll bool) {
 	text := []string{
 		msg + "\n---------------------------",
-		"App: " + vipers.AppName(),
+		"App: " + config.Name(),
 		"Mode: " + gin.Mode(),
-		"Listen: " + vipers.AppHttpServerAddr(),
-		"HostName: " + vipers.Hostname(),
+		"Listen: " + config.HttpAddr(),
+		"HostName: " + config.Hostname(),
 		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
 		"SystemIP: " + nets.SystemIP(),
 		"PublicIP: " + nets.PublicIP(),
@@ -32,17 +32,16 @@ func PushSimpleMessage(msg string, isAtAll bool) {
 		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
 	}
-	_, _ = curl.NewRequest(vipers.AppGracefulRobotUrl()).SetHeaders(headers).
-		SetTimeOut(3 * time.Second).SetPostData(postData).Post()
+	_, _ = curl.NewRequest(config.GracefulUri()).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
 }
 
 func PushContextMessage(ctx *gin.Context, msg string, reqStr string, stack string, isAtAll bool) {
 	text := []string{
 		msg + "\n---------------------------",
-		"App: " + vipers.AppName(),
+		"App: " + config.Name(),
 		"Mode: " + gin.Mode(),
-		"Listen: " + vipers.AppHttpServerAddr(),
-		"HostName: " + vipers.Hostname(),
+		"Listen: " + config.HttpAddr(),
+		"HostName: " + config.Hostname(),
 		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
 		"Url: " + "https://" + ctx.Request.Host + ctx.Request.URL.String(),
 		"SystemIP: " + nets.SystemIP(),
@@ -63,6 +62,5 @@ func PushContextMessage(ctx *gin.Context, msg string, reqStr string, stack strin
 		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
 	}
-	_, _ = curl.NewRequest(vipers.AppErrorRobotUrl()).SetHeaders(headers).
-		SetTimeOut(3 * time.Second).SetPostData(postData).Post()
+	_, _ = curl.NewRequest(config.ErrorUri()).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
 }

@@ -2,7 +2,7 @@ package restful
 
 import (
 	"fmt"
-	"github.com/ZYallers/zgin/utils/route"
+	"github.com/ZYallers/zgin/types"
 	"reflect"
 	"strings"
 	"sync"
@@ -10,10 +10,10 @@ import (
 
 var mu sync.Mutex
 
-func Merge(in ...route.Restful) route.Restful {
+func Merge(in ...types.Restful) types.Restful {
 	mu.Lock()
 	defer mu.Unlock()
-	res := route.Restful{}
+	res := types.Restful{}
 	for _, restful := range in {
 		for path, restHandlers := range restful {
 			if val, exist := res[path]; exist {

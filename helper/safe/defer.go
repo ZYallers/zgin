@@ -3,7 +3,7 @@ package safe
 import (
 	"fmt"
 	"github.com/ZYallers/golib/utils/logger"
-	"github.com/ZYallers/zgin/funcs/dingtalk"
+	"github.com/ZYallers/zgin/helper/dingtalk"
 	"go.uber.org/zap"
 	"reflect"
 	"runtime/debug"

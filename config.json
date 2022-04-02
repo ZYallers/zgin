@@ -1,0 +1,17 @@
+{
+  "app": {
+    "name": "demo",
+    "log_dir": "/apps/logs/go/zgin",
+    "http_addr": "0.0.0.0:9999",
+    "version": "1.1.0",
+    "version_key": "app_version",
+    "sign_key": "sess_token",
+    "sign_time_key": "utime",
+    "sign_expiration": 60,
+    "session_key": "sess_token",
+    "session_key_prefix": "ci_session:",
+    "session_expiration": 15552000,
+    "error_token": "ba9cf44ecaa36a58898e07ddb918cc7b2982846e8ff7fa3b1eb4ce7e55dfaf3f",
+    "graceful_token": "32a23e90a3547b0b4ee03bf7395e3d445abfc6c4a8d728103919658913f65983"
+  }
+}

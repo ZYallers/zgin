@@ -4,9 +4,9 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
+	"github.com/ZYallers/golib/funcs/php"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/types"
-	"github.com/ZYallers/zgin/utils/route"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
 	"net/http"
@@ -15,31 +15,27 @@ import (
 	"time"
 )
 
-// AuthCheck
-func AuthCheck(app *types.Zgin, api route.Restful) gin.HandlerFunc {
+func RestCheck(c types.ICheck, routes types.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var rest *route.RestHandler
-		if rest = versionCompare(ctx, app, api); rest == nil {
+		var rest *types.RestHandler
+		if rest = versionCompare(ctx, c, routes); rest == nil {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
 			return
 		}
 
 		// 签名验证
-		if rest.Signed && !signCheck(ctx, app) {
+		if rest.Signed && !signCheck(ctx, c) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
 			return
 		}
 
 		// 解析会话
-		token := queryPostForm(ctx, app.Session.TokenKey)
-		if token != "" {
-			if vars := GetSessionData(app.Session, token); vars != nil {
-				ctx.Set(consts.SessDataKey, vars)
-			}
+		if vars := parseSession(ctx, c); vars != nil {
+			ctx.Set(consts.SessDataKey, vars)
 		}
 
 		// 登录验证
-		if rest.Logged && !loginCheck(ctx) {
+		if rest.Logged && !sessionCheck(ctx) {
 			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
 			return
 		}
@@ -49,19 +45,19 @@ func AuthCheck(app *types.Zgin, api route.Restful) gin.HandlerFunc {
 	}
 }
 
-// versionCompare
-func versionCompare(ctx *gin.Context, app *types.Zgin, api route.Restful) *route.RestHandler {
-	var handlers []route.RestHandler
+func versionCompare(ctx *gin.Context, c types.ICheck, routes types.Restful) *types.RestHandler {
+	var handlers []types.RestHandler
 	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
 		return nil
 	} else {
-		if hd, ok := api[path]; !ok {
+		if hd, ok := routes[path]; !ok {
 			return nil
 		} else {
 			handlers = hd
 		}
 	}
-	version, httpMethod := queryPostForm(ctx, app.VersionKey, app.Version), ctx.Request.Method
+	ver, verKey := c.GetVersion()
+	version, httpMethod := queryPostForm(ctx, verKey, ver), ctx.Request.Method
 	for _, handler := range handlers {
 		hmd := handler.GetHttps()
 		if _, exist := hmd[httpMethod]; !exist {
@@ -83,16 +79,16 @@ func versionCompare(ctx *gin.Context, app *types.Zgin, api route.Restful) *route
 	return nil
 }
 
-// signCheck
-func signCheck(ctx *gin.Context, app *types.Zgin) bool {
-	sign := queryPostForm(ctx, "sign")
+func signCheck(ctx *gin.Context, c types.ICheck) bool {
+	secretKey, key, timeKey, dev, expiration := c.GetSign()
+	sign := queryPostForm(ctx, key)
 	if sign == "" {
 		return false
 	}
-	if gin.IsDebugging() && sign == app.DevSign {
+	if gin.IsDebugging() && sign == dev {
 		return true
 	}
-	timestampStr := queryPostForm(ctx, "utime")
+	timestampStr := queryPostForm(ctx, timeKey)
 	if timestampStr == "" {
 		return false
 	}
@@ -100,11 +96,11 @@ func signCheck(ctx *gin.Context, app *types.Zgin) bool {
 	if err != nil {
 		return false
 	}
-	if time.Now().Unix()-timestamp > app.SignTimeExpiration {
+	if time.Now().Unix()-timestamp > expiration {
 		return false
 	}
 	hash := md5.New()
-	hash.Write([]byte(timestampStr + app.TokenKey))
+	hash.Write([]byte(timestampStr + secretKey))
 	md5str := hex.EncodeToString(hash.Sum(nil))
 	if sign == base64.StdEncoding.EncodeToString([]byte(md5str)) {
 		return true
@@ -112,15 +108,33 @@ func signCheck(ctx *gin.Context, app *types.Zgin) bool {
 	return false
 }
 
-// loginCheck
-func loginCheck(ctx *gin.Context) bool {
+func parseSession(ctx *gin.Context, c types.ICheck) map[string]interface{} {
+	fn, key, prefix, _ := c.GetSession()
+	if fn == nil {
+		return nil
+	}
+	client := fn()
+	if client == nil {
+		return nil
+	}
+	token := queryPostForm(ctx, key)
+	if token == "" {
+		return nil
+	}
+	str, _ := client.Get(prefix + token).Result()
+	if str == "" {
+		return nil
+	}
+	return php.Unserialize(str)
+}
+
+func sessionCheck(ctx *gin.Context) bool {
 	if vars, ok := ctx.Get(consts.SessDataKey); ok && vars != nil {
 		return true
 	}
 	return false
 }
 
-// queryPostForm
 func queryPostForm(ctx *gin.Context, keys ...string) string {
 	if len(keys) == 0 {
 		return ""

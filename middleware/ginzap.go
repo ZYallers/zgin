@@ -5,7 +5,7 @@ import (
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
-	"github.com/ZYallers/zgin/funcs/dingtalk"
+	"github.com/ZYallers/zgin/helper/dingtalk"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net"

@@ -1,10 +1,10 @@
-package mvcs
+package types
 
 import (
 	"github.com/ZYallers/golib/types"
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/golib/utils/mysql"
-	"github.com/ZYallers/zgin/funcs/dingtalk"
+	"github.com/ZYallers/zgin/helper/dingtalk"
 	"gorm.io/gorm"
 )
 

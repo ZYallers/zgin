@@ -1,4 +1,4 @@
-package mvcs
+package types
 
 import (
 	"github.com/ZYallers/zgin/consts"

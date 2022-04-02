@@ -1,10 +1,10 @@
-package mvcs
+package types
 
 import (
 	"github.com/ZYallers/golib/types"
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/golib/utils/redis"
-	"github.com/ZYallers/zgin/funcs/dingtalk"
+	"github.com/ZYallers/zgin/helper/dingtalk"
 	redis2 "github.com/go-redis/redis"
 )
 

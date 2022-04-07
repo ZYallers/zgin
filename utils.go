@@ -48,7 +48,7 @@ var DefaultApp = &App{
 }
 
 func LoadJsonFile(args ...string) {
-	relativePath, configName, configType := ".", "config", "json"
+	relativePath, configName, configType := ".", "cfg", "json"
 	argsLen := len(args)
 	if argsLen > 0 {
 		relativePath = args[0]

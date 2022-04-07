@@ -1,6 +1,6 @@
 #!/bin/bash
 
-jsonFile="$(pwd)/config.json"
+jsonFile="$(pwd)/cfg.json"
 appName=""
 appAddr=""
 logDir=""
@@ -143,18 +143,20 @@ buildFun(){
 }
 
 sendMsg(){
-    app="App: $appName"
-    listen="Listen: $appAddr"
-    hostName="HostName: $(hostname)"
-    time="Time: $(date "+%Y/%m/%d %H:%M:%S")"
-    sip="SystemIP: $(ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:")"
+    token=$(getJsonValue "graceful_token")
+    if [[ "$token" != "" ]];then
+        app="App: $appName"
+        listen="Listen: $appAddr"
+        hostName="HostName: $(hostname)"
+        time="Time: $(date "+%Y/%m/%d %H:%M:%S")"
+        sip="SystemIP: $(ifconfig -a |grep inet |grep -v 127.0.0.1 |grep -v inet6|awk '{print $2}' |tr -d "addr:")"
 
-    token=$(getJsonValue "GracefulRobotToken")
-    url="https://oapi.dingtalk.com/robot/send?access_token=$token"
-    content="$1\n---------------------------\n$app\n$listen\n$hostName\n$time\n$sip"
-    cnt=$(echo ${content//\"/\\\"})
-    header="Content-Type: application/json"
-    curl -o /dev/null -m 3 -s "$url" -H "$header" -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"$cnt\"}}"
+        url="https://oapi.dingtalk.com/robot/send?access_token=$token"
+        content="$1\n---------------------------\n$app\n$listen\n$hostName\n$time\n$sip"
+        cnt=$(echo ${content//\"/\\\"})
+        header="Content-Type: application/json"
+        curl -o /dev/null -m 3 -s "$url" -H "$header" -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"$cnt\"}}"
+    fi
 }
 
 reloadFun(){

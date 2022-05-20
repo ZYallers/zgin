@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"github.com/ZYallers/golib/funcs/php"
 	"github.com/ZYallers/zgin/consts"
+	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
@@ -14,6 +15,12 @@ import (
 	"strings"
 	"time"
 )
+
+func WithRestCheck(routes types.Restful) option.App {
+	return func(app *types.App) {
+		app.Server.Http.Handler.(*gin.Engine).Use(RestCheck(app, routes))
+	}
+}
 
 func RestCheck(c types.ICheck, routes types.Restful) gin.HandlerFunc {
 	return func(ctx *gin.Context) {

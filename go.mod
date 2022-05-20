@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/prometheus/client_golang v1.8.0
+	github.com/spf13/cast v1.3.0
 	github.com/spf13/viper v1.7.1
 	github.com/syyongx/php2go v0.9.6
 	go.uber.org/zap v1.21.0

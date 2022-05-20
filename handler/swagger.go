@@ -3,11 +3,21 @@ package handler
 import (
 	"fmt"
 	"github.com/ZYallers/golib/funcs/files"
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"os"
 )
+
+func WithSwagger() option.App {
+	return func(app *types.App) {
+		if gin.IsDebugging() {
+			app.Server.Http.Handler.(*gin.Engine).GET("/swag/json", SwagHandler)
+		}
+	}
+}
 
 func SwagHandler(ctx *gin.Context) {
 	pwd, _ := os.Getwd()

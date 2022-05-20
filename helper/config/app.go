@@ -2,65 +2,66 @@ package config
 
 import (
 	"github.com/spf13/viper"
-	"os"
+	"path"
+	"runtime"
+	"strings"
+	"sync"
 )
-
-const dingtalkDomain = "https://oapi.dingtalk.com/robot/send?access_token="
 
 var (
-	appName               string
-	appHttpServerAddr     string
-	hostname              string
-	appGracefulRobotToken string
-	appErrorRobotToken    string
+	cfg     map[string]interface{}
+	cfgOnce sync.Once
 )
 
-func Name() string {
-	if appName != "" {
-		return appName
+func ReadFile(args ...string) error {
+	relativePath, configName, configType := ".", "cfg", "json"
+	argsLen := len(args)
+	if argsLen > 0 {
+		relativePath = args[0]
 	}
-	if appName = viper.GetString("app.name"); appName == "" {
-		return "unknown"
+	if argsLen > 1 {
+		configName = args[1]
 	}
-	return appName
+	if argsLen > 2 {
+		configType = args[2]
+	}
+	viper.SetConfigName(configName)
+	viper.SetConfigType(configType)
+	_, filePath, _, _ := runtime.Caller(1)
+	configPath := path.Join(path.Dir(filePath), relativePath)
+	if configPath != "" {
+		viper.AddConfigPath(configPath)
+	}
+	return viper.ReadInConfig()
 }
 
-func HttpAddr() string {
-	if appHttpServerAddr != "" {
-		return appHttpServerAddr
-	}
-	if appHttpServerAddr = viper.GetString("app.http_addr"); appHttpServerAddr == "" {
-		return "unknown"
-	}
-	return appHttpServerAddr
+func AllSettings() map[string]interface{} {
+	cfgOnce.Do(func() {
+		cfg = viper.AllSettings()
+	})
+	return cfg
 }
 
-func Hostname() string {
-	if hostname != "" {
-		return hostname
+func Value(key string) interface{} {
+	allCfg := AllSettings()
+	if val, exist := allCfg[strings.ToLower(key)]; exist {
+		return val
 	}
-	if hostname, _ = os.Hostname(); hostname == "" {
-		return "unknown"
-	}
-	return hostname
+	return nil
 }
 
-func GracefulUri() string {
-	if appGracefulRobotToken != "" {
-		return dingtalkDomain + appGracefulRobotToken
+func AppMap() map[string]interface{} {
+	if m := Value("app"); m != nil {
+		return m.(map[string]interface{})
 	}
-	if appGracefulRobotToken = viper.GetString("app.graceful_token"); appGracefulRobotToken != "" {
-		return dingtalkDomain + appGracefulRobotToken
-	}
-	return ""
+	return nil
 }
 
-func ErrorUri() string {
-	if appErrorRobotToken != "" {
-		return dingtalkDomain + appErrorRobotToken
+func AppValue(key string) interface{} {
+	if am := AppMap(); am == nil {
+		return nil
+	} else if val, exist := am[key]; exist {
+		return val
 	}
-	if appErrorRobotToken = viper.GetString("app.error_token"); appErrorRobotToken != "" {
-		return dingtalkDomain + appErrorRobotToken
-	}
-	return ""
+	return nil
 }

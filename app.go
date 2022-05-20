@@ -1,77 +1,60 @@
 package zgin
 
 import (
-	"github.com/ZYallers/zgin/consts"
-	"github.com/ZYallers/zgin/middleware"
+	"github.com/ZYallers/golib/utils/logger"
+	"github.com/ZYallers/zgin/helper/config"
+	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
-	"time"
+	"github.com/spf13/cast"
+	"net/http"
 )
 
-type Session struct {
-	Key        string
-	KeyPrefix  string
-	Expiration int64
-	ClientFunc func() *redis.Client
-}
+var app *types.App
 
-type Version struct {
-	Latest, Key string
-}
-
-type Logger struct {
-	Dir         string
-	LogTimeout  time.Duration
-	SendTimeout time.Duration
-}
-
-type Sign struct {
-	SecretKey  string
-	Key        string
-	TimeKey    string
-	Dev        string
-	Expiration int64
-}
-
-type App struct {
-	Name    string
-	Mode    string
-	Version *Version
-	Logger  *Logger
-	Server  *Server
-	Sign    *Sign
-	Session *Session
-}
-
-func (a *App) SetMode(mode string) *App {
-	a.Mode = mode
-	if a.Mode == consts.DevMode {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
+func New(opts ...option.App) *types.App {
+	gin.DisableConsoleColor()
+	app = &types.App{}
+	*app = *types.DefaultApp
+	for key, value := range config.AppMap() {
+		switch key {
+		case "name":
+			app.Name = cast.ToString(value)
+		case "log_dir":
+			app.Logger.Dir = cast.ToString(value)
+		case "http_addr":
+			app.Server.Addr = cast.ToString(value)
+		case "version":
+			app.Version.Latest = cast.ToString(value)
+		case "version_key":
+			app.Version.Key = cast.ToString(value)
+		case "sign_key":
+			app.Sign.Key = cast.ToString(value)
+		case "sign_time_key":
+			app.Sign.TimeKey = cast.ToString(value)
+		case "sign_expiration":
+			app.Sign.Expiration = cast.ToInt64(value)
+		case "session_key":
+			app.Session.Key = cast.ToString(value)
+		case "session_key_prefix":
+			app.Session.KeyPrefix = cast.ToString(value)
+		case "session_expiration":
+			app.Session.Expiration = cast.ToInt64(value)
+		}
 	}
-	return a
+	for _, o := range opts {
+		o(app)
+	}
+	app.Server.Http = &http.Server{
+		Handler:      gin.New(),
+		Addr:         app.Server.Addr,
+		ReadTimeout:  app.Server.ReadTimeout,
+		WriteTimeout: app.Server.WriteTimeout,
+	}
+	logger.SetLoggerDir(app.Logger.Dir)
+	return app
 }
 
-func (a *App) GetVersion() (version, key string) {
-	return a.Version.Latest, a.Version.Key
-}
-
-func (a *App) GetSign() (secretKey, key, timeKey, dev string, expiration int64) {
-	return a.Sign.SecretKey, a.Sign.Key, a.Sign.TimeKey, a.Sign.Dev, a.Sign.Expiration
-}
-
-func (a *App) GetSession() (clientFunc func() *redis.Client, key, prefix string, expiration int64) {
-	return a.Session.ClientFunc, a.Session.Key, a.Session.KeyPrefix, a.Session.Expiration
-}
-
-func (a *App) RegisterGlobalMiddleware() *App {
-	a.Server.Http.Handler.(*gin.Engine).Use(middleware.RecoveryWithZap(), middleware.LoggerWithZap(a.Logger.LogTimeout, a.Logger.SendTimeout))
-	return a
-}
-
-func (a *App) RegisterCheckMiddleware(routes types.Restful) *App {
-	a.Server.Http.Handler.(*gin.Engine).Use(middleware.RestCheck(a, routes))
-	return a
+func App() *types.App {
+	return app
 }

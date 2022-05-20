@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/pprof"
@@ -11,12 +13,12 @@ const (
 	DefaultPrefix = "/debug/pprof"
 )
 
-func getPrefix(prefixOptions ...string) string {
-	prefix := DefaultPrefix
-	if len(prefixOptions) > 0 {
-		prefix = prefixOptions[0]
+func WithPProf() option.App {
+	return func(app *types.App) {
+		if gin.IsDebugging() {
+			PProfRegister(app.Server.Http.Handler.(*gin.Engine))
+		}
 	}
-	return prefix
 }
 
 // Register the standard HandlerFuncs from the net/http/pprof package with
@@ -53,4 +55,12 @@ func pprofHandler(h http.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
+}
+
+func getPrefix(prefixOptions ...string) string {
+	prefix := DefaultPrefix
+	if len(prefixOptions) > 0 {
+		prefix = prefixOptions[0]
+	}
+	return prefix
 }

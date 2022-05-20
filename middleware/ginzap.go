@@ -6,6 +6,8 @@ import (
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/helper/dingtalk"
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net"
@@ -16,6 +18,18 @@ import (
 	"strings"
 	"time"
 )
+
+func WithZapRecovery() option.App {
+	return func(app *types.App) {
+		app.Server.Http.Handler.(*gin.Engine).Use(RecoveryWithZap())
+	}
+}
+
+func WithZapLogger() option.App {
+	return func(app *types.App) {
+		app.Server.Http.Handler.(*gin.Engine).Use(LoggerWithZap(app.Logger.LogTimeout, app.Logger.SendTimeout))
+	}
+}
 
 // LoggerWithZap returns a gin.HandlerFunc (middleware) that logs requests using uber-go/zap.
 // Requests with errors are logged using zap.Error().

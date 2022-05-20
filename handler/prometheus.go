@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -20,6 +22,14 @@ var (
 		[]string{"name", "cmdline"},
 	)
 )
+
+func WithPrometheus() option.App {
+	return func(app *types.App) {
+		app.Server.Http.Handler.(*gin.Engine).GET("/metrics", func(ctx *gin.Context) {
+			PrometheusHandler(ctx, app.Name)
+		})
+	}
+}
 
 func PrometheusHandler(ctx *gin.Context, name string) {
 	once.Do(func() {

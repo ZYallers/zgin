@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"runtime"
@@ -27,70 +29,13 @@ func init() {
 	expvar.Publish("G:上次GC的暂停时间", expvar.Func(getLastGCPauseTime))
 }
 
-// 计算运行时间
-func caleRuntime() interface{} {
-	return time.Since(start).String()
-}
-
-// 当前 Golang 版本
-func GoVersion() interface{} {
-	return runtime.Version()
-}
-
-// 获取 CPU 核心数量
-func getNumCPUs() interface{} {
-	return runtime.NumCPU()
-}
-
-// 当前系统类型
-func getGoOS() interface{} {
-	return runtime.GOOS
-}
-
-// 当前 goroutine 数量
-func getNumGoroutins() interface{} {
-	return runtime.NumGoroutine()
-}
-
-// CGo 调用次数
-func getNumCgoCall() interface{} {
-	return runtime.NumCgoCall()
-}
-
-// 获取上次 GC 的暂停时间
-func getLastGCPauseTime() interface{} {
-	var gcPause uint64
-	ms := new(runtime.MemStats)
-	statString := expvar.Get("memstats").String()
-	if statString != "" {
-		_ = json.Unmarshal([]byte(statString), ms)
-		if lastPause == 0 || lastPause != ms.NumGC {
-			gcPause = ms.PauseNs[(ms.NumGC+255)%256]
-			lastPause = ms.NumGC
-		}
+func WithExpVar() option.App {
+	return func(app *types.App) {
+		app.Server.Http.Handler.(*gin.Engine).GET("/expvar", ExpHandler)
 	}
-	return gcPause
 }
 
-func sizeFormat(b uint64) string {
-	i := 0
-	// b大于是1024字节时，开始循环，当循环到第4次时跳出
-	flat, _ := strconv.ParseFloat(strconv.FormatInt(int64(b), 10), 64)
-	for {
-		if flat >= 1024 {
-			flat, _ = strconv.ParseFloat(fmt.Sprintf("%.5f", flat/1024), 64)
-			i++
-		}
-		if flat < 1024 || i == 4 {
-			break
-		}
-	}
-	//将B,KB,MB,GB,TB定义成一维数组
-	units := []string{"B", "KB", "MB", "GB", "TB"}
-	return fmt.Sprintf("%.2f%s", flat, units[i])
-}
-
-// 返回当前运行信息
+// ExpHandler 返回当前运行信息
 func ExpHandler(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Content-Type", "application/json;charset=utf-8")
 	first := true
@@ -155,4 +100,67 @@ func ExpHandler(ctx *gin.Context) {
 	_, _ = fmt.Fprintf(ctx.Writer, "\n}\n")
 
 	ctx.String(http.StatusOK, "")
+}
+
+// 计算运行时间
+func caleRuntime() interface{} {
+	return time.Since(start).String()
+}
+
+// 当前 Golang 版本
+func GoVersion() interface{} {
+	return runtime.Version()
+}
+
+// 获取 CPU 核心数量
+func getNumCPUs() interface{} {
+	return runtime.NumCPU()
+}
+
+// 当前系统类型
+func getGoOS() interface{} {
+	return runtime.GOOS
+}
+
+// 当前 goroutine 数量
+func getNumGoroutins() interface{} {
+	return runtime.NumGoroutine()
+}
+
+// CGo 调用次数
+func getNumCgoCall() interface{} {
+	return runtime.NumCgoCall()
+}
+
+// 获取上次 GC 的暂停时间
+func getLastGCPauseTime() interface{} {
+	var gcPause uint64
+	ms := new(runtime.MemStats)
+	statString := expvar.Get("memstats").String()
+	if statString != "" {
+		_ = json.Unmarshal([]byte(statString), ms)
+		if lastPause == 0 || lastPause != ms.NumGC {
+			gcPause = ms.PauseNs[(ms.NumGC+255)%256]
+			lastPause = ms.NumGC
+		}
+	}
+	return gcPause
+}
+
+func sizeFormat(b uint64) string {
+	i := 0
+	// b大于是1024字节时，开始循环，当循环到第4次时跳出
+	flat, _ := strconv.ParseFloat(strconv.FormatInt(int64(b), 10), 64)
+	for {
+		if flat >= 1024 {
+			flat, _ = strconv.ParseFloat(fmt.Sprintf("%.5f", flat/1024), 64)
+			i++
+		}
+		if flat < 1024 || i == 4 {
+			break
+		}
+	}
+	//将B,KB,MB,GB,TB定义成一维数组
+	units := []string{"B", "KB", "MB", "GB", "TB"}
+	return fmt.Sprintf("%.2f%s", flat, units[i])
 }

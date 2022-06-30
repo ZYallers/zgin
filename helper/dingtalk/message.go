@@ -1,6 +1,7 @@
 package dingtalk
 
 import (
+	"fmt"
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
 	"github.com/ZYallers/zgin/helper/config"
@@ -11,60 +12,84 @@ import (
 	"time"
 )
 
-const timeout = 3 * time.Second
+const (
+	timeout   = 3 * time.Second
+	uriPrefix = "https://oapi.dingtalk.com/robot/send?access_token="
+)
 
 var headers = map[string]string{"Content-Type": "application/json;charset=utf-8"}
 
-func PushSimpleMessage(msg string, isAtAll bool) {
-	text := []string{
-		msg + "\n---------------------------",
-		"App: " + appName(),
-		"Mode: " + gin.Mode(),
-		"Listen: " + appHttpAddr(),
-		"HostName: " + hostname(),
-		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
-		"SystemIP: " + nets.SystemIP(),
-		"PublicIP: " + nets.PublicIP(),
-	}
-	if gin.IsDebugging() {
-		isAtAll = false
-	}
-	postData := map[string]interface{}{
-		"msgtype": "text",
-		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
-		"at":      map[string]interface{}{"isAtAll": isAtAll},
-	}
-	_, _ = curl.NewRequest(gracefulUri()).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
+func PushSimpleMessage(msg interface{}, isAtAll bool) {
+	PushMessage(gracefulToken(), msg, isAtAll)
 }
 
-func PushContextMessage(ctx *gin.Context, msg string, reqStr string, stack string, isAtAll bool) {
+func PushContextMessage(ctx *gin.Context, msg interface{}, reqStr string, stack string, isAtAll bool) {
+	PushMessage(errorToken(), msg, isAtAll, ctx, reqStr, stack)
+}
+
+func PushMessage(token string, msg interface{}, options ...interface{}) {
+	if token == "" || msg == "" {
+		return
+	}
+	defer func() { recover() }()
 	text := []string{
-		msg + "\n---------------------------",
+		getMsgText(msg) + "\n---------------------------",
 		"App: " + appName(),
 		"Mode: " + gin.Mode(),
 		"Listen: " + appHttpAddr(),
 		"HostName: " + hostname(),
 		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
-		"Url: " + "https://" + ctx.Request.Host + ctx.Request.URL.String(),
 		"SystemIP: " + nets.SystemIP(),
 		"PublicIP: " + nets.PublicIP(),
-		"ClientIP: " + nets.ClientIP(ctx.ClientIP()),
 	}
-	if reqStr != "" {
-		text = append(text, "\nRequest:\n"+strings.ReplaceAll(reqStr, "\n", ""))
+	optionsLen := len(options)
+	var isAtAll bool
+	if !gin.IsDebugging() && optionsLen > 0 {
+		if val, ok := options[0].(bool); ok {
+			isAtAll = val
+		}
 	}
-	if stack != "" {
-		text = append(text, "\nStack:\n"+stack)
+	var ctx *gin.Context
+	if optionsLen > 1 {
+		if val, ok := options[1].(*gin.Context); ok {
+			ctx = val
+		}
 	}
-	if gin.IsDebugging() {
-		isAtAll = false
+	if ctx != nil {
+		text = append(text,
+			"ClientIP: "+nets.ClientIP(ctx.ClientIP()),
+			"Url: "+"https://"+ctx.Request.Host+ctx.Request.URL.String(),
+		)
+	}
+	if optionsLen > 2 {
+		if reqStr, ok := options[2].(string); ok && reqStr != "" {
+			text = append(text, "\nRequest:\n"+strings.ReplaceAll(reqStr, "\n", ""))
+		}
+	}
+	if optionsLen > 3 {
+		if stack, ok := options[3].(string); ok && stack != "" {
+			text = append(text, "\nStack:\n"+stack)
+		}
 	}
 	postData := map[string]interface{}{
 		"msgtype": "text",
 		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
 	}
-	_, _ = curl.NewRequest(errorUri()).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
+	_, _ = curl.NewRequest(uriPrefix + token).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
+}
+
+func getMsgText(msg interface{}) string {
+	var s string
+	switch v := msg.(type) {
+	case string:
+		s = v
+	case error:
+		s = v.Error()
+	default:
+		s = fmt.Sprintf("%v", v)
+	}
+	return s
 }
 
 func appName() string {
@@ -88,16 +113,16 @@ func hostname() string {
 	return "unknown"
 }
 
-func gracefulUri() string {
+func gracefulToken() string {
 	if val := config.AppValue("graceful_token"); val != nil {
-		return "https://oapi.dingtalk.com/robot/send?access_token=" + cast.ToString(val)
+		return cast.ToString(val)
 	}
 	return ""
 }
 
-func errorUri() string {
+func errorToken() string {
 	if val := config.AppValue("error_token"); val != nil {
-		return "https://oapi.dingtalk.com/robot/send?access_token=" + cast.ToString(val)
+		return cast.ToString(val)
 	}
 	return ""
 }

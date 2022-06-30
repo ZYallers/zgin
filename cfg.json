@@ -1,11 +1,11 @@
 {
   "app": {
     "name": "demo",
-    "log_dir": "/apps/logs/go/demo",
-    "http_addr": "0.0.0.0:9999",
     "version": "1.1.0",
+    "http_addr": "0.0.0.0:9999",
+    "log_dir": "/apps/logs/go/demo",
     "version_key": "app_version",
-    "sign_key": "sess_token",
+    "sign_key": "sign",
     "sign_time_key": "utime",
     "sign_expiration": 60,
     "session_key": "sess_token",

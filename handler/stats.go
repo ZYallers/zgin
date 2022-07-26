@@ -12,14 +12,11 @@ import (
 
 func WithStats(acts gin.Accounts) option.App {
 	return func(app *types.App) {
-		if gin.IsDebugging() {
-			if acts == nil {
-				app.Server.Http.Handler.(*gin.Engine).GET("/stats/*filepath", StatsHandler)
-				return
-			}
-			app.Server.Http.Handler.(*gin.Engine).Group("/stats", gin.BasicAuth(acts)).
-				GET("/*filepath", StatsHandler)
+		if acts == nil {
+			app.Server.Http.Handler.(*gin.Engine).GET("/stats/*filepath", StatsHandler)
+			return
 		}
+		app.Server.Http.Handler.(*gin.Engine).Group("/stats", gin.BasicAuth(acts)).GET("/*filepath", StatsHandler)
 	}
 }
 

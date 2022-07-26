@@ -13,9 +13,7 @@ import (
 
 func WithSwagger() option.App {
 	return func(app *types.App) {
-		if gin.IsDebugging() {
-			app.Server.Http.Handler.(*gin.Engine).GET("/swag/json", SwagHandler)
-		}
+		app.Server.Http.Handler.(*gin.Engine).GET("/swag/json", SwagHandler)
 	}
 }
 

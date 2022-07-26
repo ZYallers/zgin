@@ -1,7 +1,6 @@
 package dingtalk
 
 import (
-	"fmt"
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
 	"github.com/ZYallers/zgin/helper/config"
@@ -20,27 +19,27 @@ const (
 var headers = map[string]string{"Content-Type": "application/json;charset=utf-8"}
 
 func PushSimpleMessage(msg interface{}, isAtAll bool) {
-	PushMessage(gracefulToken(), msg, isAtAll)
+	PushMessage(getGracefulToken(), msg, isAtAll)
 }
 
 func PushContextMessage(ctx *gin.Context, msg interface{}, reqStr string, stack string, isAtAll bool) {
-	PushMessage(errorToken(), msg, isAtAll, ctx, reqStr, stack)
+	PushMessage(getErrorToken(), msg, isAtAll, ctx, reqStr, stack)
 }
 
 func PushMessage(token string, msg interface{}, options ...interface{}) {
-	if token == "" || msg == "" {
+	defer func() { recover() }()
+	title := cast.ToString(msg)
+	if token == "" || title == "" {
 		return
 	}
-	defer func() { recover() }()
-	text := []string{
-		getMsgText(msg) + "\n---------------------------",
-		"App: " + appName(),
+	text := []string{title + "\n---------------------------",
+		"App: " + getName(),
 		"Mode: " + gin.Mode(),
-		"Listen: " + appHttpAddr(),
-		"HostName: " + hostname(),
+		"Listen: " + getHttpAddr(),
+		"HostName: " + getHostName(),
 		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
-		"SystemIP: " + nets.SystemIP(),
-		"PublicIP: " + nets.PublicIP(),
+		"SystemIP: " + getSystemIP(),
+		"PublicIP: " + getPublicIP(),
 	}
 	optionsLen := len(options)
 	var isAtAll bool
@@ -79,50 +78,85 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 	_, _ = curl.NewRequest(uriPrefix + token).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
 }
 
-func getMsgText(msg interface{}) string {
-	var s string
-	switch v := msg.(type) {
-	case string:
-		s = v
-	case error:
-		s = v.Error()
-	default:
-		s = fmt.Sprintf("%v", v)
+var (
+	systemIP      string
+	publicIP      string
+	hostName      string
+	name          string
+	httpAddr      string
+	gracefulToken string
+	errorToken    string
+)
+
+func getHostName() string {
+	if hostName == "" {
+		if val, _ := os.Hostname(); val != "" {
+			hostName = val
+		} else {
+			return "unknown"
+		}
 	}
-	return s
+	return hostName
 }
 
-func appName() string {
-	if val := config.AppValue("name"); val != nil {
-		return cast.ToString(val)
+func getSystemIP() string {
+	if systemIP == "" {
+		if s := nets.SystemIP(); s != "" {
+			systemIP = s
+		} else {
+			return "unknown"
+		}
 	}
-	return "unknown"
+	return systemIP
 }
 
-func appHttpAddr() string {
-	if val := config.AppValue("http_addr"); val != nil {
-		return cast.ToString(val)
+func getPublicIP() string {
+	if publicIP == "" {
+		if s := nets.PublicIP(); s != "" {
+			publicIP = s
+		} else {
+			return "unknown"
+		}
 	}
-	return "unknown"
+	return publicIP
 }
 
-func hostname() string {
-	if val, _ := os.Hostname(); val != "" {
-		return val
+func getName() string {
+	if name == "" {
+		if val := config.AppValue("name"); val != nil {
+			name = cast.ToString(val)
+		} else {
+			return "unknown"
+		}
 	}
-	return "unknown"
+	return name
 }
 
-func gracefulToken() string {
-	if val := config.AppValue("graceful_token"); val != nil {
-		return cast.ToString(val)
+func getHttpAddr() string {
+	if httpAddr == "" {
+		if val := config.AppValue("http_addr"); val != nil {
+			httpAddr = cast.ToString(val)
+		} else {
+			return "unknown"
+		}
 	}
-	return ""
+	return httpAddr
 }
 
-func errorToken() string {
-	if val := config.AppValue("error_token"); val != nil {
-		return cast.ToString(val)
+func getGracefulToken() string {
+	if gracefulToken == "" {
+		if val := config.AppValue("graceful_token"); val != nil {
+			gracefulToken = cast.ToString(val)
+		}
 	}
-	return ""
+	return gracefulToken
+}
+
+func getErrorToken() string {
+	if errorToken == "" {
+		if val := config.AppValue("error_token"); val != nil {
+			errorToken = cast.ToString(val)
+		}
+	}
+	return errorToken
 }

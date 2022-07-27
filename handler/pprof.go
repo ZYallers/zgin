@@ -15,9 +15,7 @@ const (
 
 func WithPProf() option.App {
 	return func(app *types.App) {
-		if gin.IsDebugging() {
-			PProfRegister(app.Server.Http.Handler.(*gin.Engine))
-		}
+		PProfRegister(app.Server.Http.Handler.(*gin.Engine))
 	}
 }
 

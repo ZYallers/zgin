@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/helper/grace"
 	"github.com/gin-gonic/gin"
@@ -108,9 +109,9 @@ func (a *App) GetSession() (clientFunc func() *redis.Client, key, prefix string,
 	return a.Session.ClientFunc, a.Session.Key, a.Session.KeyPrefix, a.Session.Expiration
 }
 
-func (a *App) Run(opts ...func(app *App)) {
-	for _, o := range opts {
-		o(a)
+func (a *App) Run(options ...func(app *App)) {
+	for _, opt := range options {
+		opt(a)
 	}
-	grace.Graceful(a.Server.Http, a.Server.ShutDownTimeout)
+	grace.Graceful(a.Server.Http, a.Server.ShutDownTimeout, logger.Use(a.Name))
 }

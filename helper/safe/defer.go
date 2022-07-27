@@ -4,43 +4,18 @@ import (
 	"fmt"
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/helper/dingtalk"
+	"github.com/spf13/cast"
 	"go.uber.org/zap"
-	"reflect"
 	"runtime/debug"
 )
 
-func Defer(params ...interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			msg := fmt.Sprintf("%+v", r)
-			stack := string(debug.Stack())
-			logger.Use("panic").Error(msg, zap.String("debug_stack", stack))
-			dingtalk.PushSimpleMessage(fmt.Sprintf("recovery from panic:\n%s\n%s", msg, stack), true)
-			return
-		}
-	}()
-
+func Defer() {
 	r := recover()
 	if r == nil {
 		return
 	}
-
-	err := fmt.Errorf("%+v", r)
+	err := cast.ToString(r)
 	stack := string(debug.Stack())
-	logger.Use("panic").Error(err.Error(), zap.String("debug_stack", stack))
-	dingtalk.PushSimpleMessage(fmt.Sprintf("recovery from panic:\n%s\n%s", err.Error(), stack), true)
-
-	if paramsLen := len(params); paramsLen > 0 {
-		if reflect.TypeOf(params[0]).String()[0:4] != "func" {
-			return
-		}
-		var args []reflect.Value
-		if paramsLen > 1 {
-			args = append(args, reflect.ValueOf(err))
-			for _, v := range params[1:] {
-				args = append(args, reflect.ValueOf(v))
-			}
-		}
-		reflect.ValueOf(params[0]).Call(args)
-	}
+	logger.Use("panic").Error(err, zap.String("debug_stack", stack))
+	dingtalk.PushSimpleMessage(fmt.Sprintf("recovery from panic:\n%s\n%s", err, stack), true)
 }

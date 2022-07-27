@@ -12,8 +12,7 @@ import (
 
 var app *types.App
 
-func New(opts ...option.App) *types.App {
-	gin.DisableConsoleColor()
+func New(options ...option.App) *types.App {
 	app = &types.App{}
 	*app = *types.DefaultApp
 	for key, value := range config.AppMap() {
@@ -42,8 +41,8 @@ func New(opts ...option.App) *types.App {
 			app.Session.Expiration = cast.ToInt64(value)
 		}
 	}
-	for _, o := range opts {
-		o(app)
+	for _, opt := range options {
+		opt(app)
 	}
 	app.Server.Http = &http.Server{
 		Handler:      gin.New(),

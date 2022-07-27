@@ -41,41 +41,34 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 		"SystemIP: " + getSystemIP(),
 		"PublicIP: " + getPublicIP(),
 	}
-	optionsLen := len(options)
+	ol := len(options)
 	var isAtAll bool
-	if !gin.IsDebugging() && optionsLen > 0 {
+	if ol > 0 && !gin.IsDebugging() {
 		if val, ok := options[0].(bool); ok {
 			isAtAll = val
 		}
 	}
-	var ctx *gin.Context
-	if optionsLen > 1 {
-		if val, ok := options[1].(*gin.Context); ok {
-			ctx = val
+	if ol > 1 {
+		if ctx, ok := options[1].(*gin.Context); ok && ctx != nil {
+			text = append(text, "ClientIP: "+nets.ClientIP(ctx.ClientIP()), "Url: "+"https://"+ctx.Request.Host+ctx.Request.URL.String())
 		}
 	}
-	if ctx != nil {
-		text = append(text,
-			"ClientIP: "+nets.ClientIP(ctx.ClientIP()),
-			"Url: "+"https://"+ctx.Request.Host+ctx.Request.URL.String(),
-		)
-	}
-	if optionsLen > 2 {
-		if reqStr, ok := options[2].(string); ok && reqStr != "" {
-			text = append(text, "\nRequest:\n"+strings.ReplaceAll(reqStr, "\n", ""))
+	if ol > 2 {
+		if rs, ok := options[2].(string); ok && rs != "" {
+			text = append(text, "\nRequest:\n"+strings.ReplaceAll(rs, "\n", ""))
 		}
 	}
-	if optionsLen > 3 {
+	if ol > 3 {
 		if stack, ok := options[3].(string); ok && stack != "" {
 			text = append(text, "\nStack:\n"+stack)
 		}
 	}
-	postData := map[string]interface{}{
+	data := map[string]interface{}{
 		"msgtype": "text",
 		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
 	}
-	_, _ = curl.NewRequest(uriPrefix + token).SetHeaders(headers).SetTimeOut(timeout).SetPostData(postData).Post()
+	_, _ = curl.NewRequest(uriPrefix + token).SetHeaders(headers).SetTimeOut(timeout).SetPostData(data).Post()
 }
 
 var (

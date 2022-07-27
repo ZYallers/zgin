@@ -3,8 +3,8 @@ package grace
 import (
 	"context"
 	"fmt"
-	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/helper/dingtalk"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-func logAndPushMsg(msg string) {
-	logger.Use("graceful").Info(msg)
+func pushLog(msg string, fn func(string, ...zap.Field)) {
+	fn(msg)
 	dingtalk.PushSimpleMessage(msg, true)
 }
 
-func Graceful(srv *http.Server, timeout time.Duration) {
+func Graceful(srv *http.Server, timeout time.Duration, logger *zap.Logger) {
 	go func() {
-		logAndPushMsg(fmt.Sprintf("server(%d) is ready to listen and serve", syscall.Getpid()))
+		pushLog(fmt.Sprintf("server(%d) is ready to listen and serve", syscall.Getpid()), logger.Info)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logAndPushMsg(fmt.Sprintf("server listen and serve error: %v", err))
+			pushLog(fmt.Sprintf("server listen and serve error: %v", err), logger.Error)
 			os.Exit(1)
 		}
 	}()
@@ -44,10 +44,10 @@ func Graceful(srv *http.Server, timeout time.Duration) {
 	defer cancel()
 
 	pid := syscall.Getpid()
-	logAndPushMsg(fmt.Sprintf("server(%d) is shutting down(%v)...", pid, sign))
+	pushLog(fmt.Sprintf("server(%d) is shutting down(%v)...", pid, sign), logger.Info)
 	if err := srv.Shutdown(ctx); err != nil {
-		logAndPushMsg(fmt.Sprintf("server gracefully shutdown error: %v", err))
+		pushLog(fmt.Sprintf("server gracefully shutdown error: %v", err), logger.Error)
 	} else {
-		logAndPushMsg(fmt.Sprintf("server(%d) has stopped", pid))
+		pushLog(fmt.Sprintf("server(%d) has stopped", pid), logger.Info)
 	}
 }

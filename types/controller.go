@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/ZYallers/golib/funcs/strings"
 	libJson "github.com/ZYallers/golib/utils/json"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
@@ -58,7 +57,7 @@ func (c *Controller) Json(args ...interface{}) {
 	}
 	bte, err := libJson.Marshal(result)
 	if err != nil {
-		bte = strings.String2Bytes(fmt.Sprintf(`{"code":%d,"msg":"%s"}`, http.StatusInternalServerError, err))
+		bte = []byte(fmt.Sprintf(`{"code":%d,"msg":"%s"}`, http.StatusInternalServerError, cast.ToString(err)))
 	}
 	c.Ctx.Abort()
 	c.Ctx.Status(http.StatusOK)

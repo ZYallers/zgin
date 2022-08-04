@@ -16,3 +16,6 @@ vendor/
 
 # Go module
 go.sum
+
+# Other
+*.log

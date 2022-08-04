@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"net/http"
-	"strconv"
 )
 
 type IController interface {
@@ -32,9 +31,8 @@ func (c *Controller) GetLoggedUserId() int {
 	if data, ok := c.Ctx.Get(consts.SessDataKey); ok && data != nil {
 		vars := data.(map[string]interface{})
 		if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
-			if str, ok := userInfo["userid"].(string); ok && str != "" {
-				userId, _ := strconv.Atoi(str)
-				return userId
+			if s, ok := userInfo["userid"].(string); ok && s != "" {
+				return cast.ToInt(s)
 			}
 		}
 	}
@@ -96,10 +94,8 @@ func (c *Controller) GetQueryByMethod(key, defaultValue string) string {
 
 // QueryPostNumber 从Query或PostForm中获取数字类型key值
 func (c *Controller) QueryPostNumber(key string, defaultValue ...int) int {
-	s := c.GetQueryPostForm(key)
-	if s != "" {
-		i, _ := strconv.Atoi(s)
-		return i
+	if s := c.GetQueryPostForm(key); s != "" {
+		return cast.ToInt(s)
 	}
 	if len(defaultValue) > 0 {
 		return defaultValue[0]

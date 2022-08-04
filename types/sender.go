@@ -7,13 +7,15 @@ import (
 	"github.com/spf13/cast"
 )
 
+const tokenKey = "sql_token"
+
 type Sender struct {
 	token string
 }
 
 func (s *Sender) sqlToken() string {
 	if s.token == "" {
-		if v := config.AppValue("sql_token"); v != nil {
+		if v := config.AppValue(tokenKey); v != nil {
 			s.token = cast.ToString(v)
 		}
 	}

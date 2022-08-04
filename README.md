@@ -1,4 +1,4 @@
-# Zgin API Framework
+# zgin
 [![Go Report Card](https://goreportcard.com/badge/github.com/ZYallers/zgin)](https://goreportcard.com/report/github.com/ZYallers/zgin)
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/ZYallers/zgin.svg?branch=master)](https://travis-ci.org/ZYallers/zgin) 
@@ -12,7 +12,6 @@
 Zgin is a API framework written in Go (Golang). 
 An MVCS, Restful, and version control framework based on the [Gin](https://github.com/gin-gonic/gin) framework.
 If you need performance and good productivity, you will love zgin.
-
 
 ## Installation
 To install zgin package, you need to install Go and set your Go workspace first.
@@ -28,37 +27,46 @@ import "github.com/ZYallers/zgin"
 ```
 
 ## Quick start
+
 ```go
 package main
 
 import (
-	"demo/define"
-	"demo/restful"
+	"fmt"
 	"github.com/ZYallers/zgin"
 	"github.com/ZYallers/zgin/consts"
+	"github.com/ZYallers/zgin/handler"
+	"github.com/ZYallers/zgin/helper/config"
+	"github.com/ZYallers/zgin/middleware"
+	"github.com/ZYallers/zgin/option"
 	"github.com/gin-gonic/gin"
+	"demo/route"
 )
 
 func main() {
 	gin.DisableConsoleColor()
-	zgin.LoadJsonFile()
-	app := zgin.New()
-	app.SetMode(consts.DevMode)
-	app.Session.ClientFunc = (&define.Service{}).Session
-	app.Server.NoRouteHandler().HealthHandler()
-	app.RegisterGlobalMiddleware()
+	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {}
 
-	eg := app.Server.Http.Handler.(*gin.Engine)
-	zgin.ExpVarHandler(eg)
-	zgin.PrometheusHandler(eg, app.Name)
-	if gin.IsDebugging() {
-		zgin.SwagHandler(eg)
-		zgin.PProfHandler(eg)
-		zgin.StatsVizHandler(eg, gin.Accounts{"test": "123456"})
+	if err := config.ReadFile(); err != nil {
+		panic(fmt.Errorf("read config file error: %s", err))
 	}
 
-	app.RegisterCheckMiddleware(restful.Api)
-	app.Server.Start()
+	app := zgin.New(
+		option.WithMode(consts.DevMode),
+		option.WithSignSecretKey("#$%1234"),
+	)
+
+	app.Run(
+		handler.WithNoRoute(),
+		handler.WithHealth(),
+		middleware.WithZapRecovery(),
+		middleware.WithZapLogger(),
+		handler.WithExpVar(),
+		handler.WithPrometheus(),
+		handler.WithSwagger(),
+		handler.WithPProf(),
+		middleware.WithRestCheck(route.Restful),
+	)
 }
 ```
 run main.go and visit http://0.0.0.0:9010/health (for windows "http://localhost:8080/health") on browser

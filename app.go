@@ -6,7 +6,6 @@ import (
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"net/http"
 )
 
@@ -15,30 +14,30 @@ var app *types.App
 func New(options ...option.App) *types.App {
 	app = &types.App{}
 	*app = *types.DefaultApp
-	for key, value := range config.AppMap() {
-		switch key {
+	for k, v := range config.AppMap() {
+		switch k {
 		case "name":
-			app.Name = cast.ToString(value)
+			app.Name = v.(string)
 		case "log_dir":
-			app.Logger.Dir = cast.ToString(value)
+			app.Logger.Dir = v.(string)
 		case "http_addr":
-			app.Server.Addr = cast.ToString(value)
+			app.Server.Addr = v.(string)
 		case "version":
-			app.Version.Latest = cast.ToString(value)
+			app.Version.Latest = v.(string)
 		case "version_key":
-			app.Version.Key = cast.ToString(value)
+			app.Version.Key = v.(string)
 		case "sign_key":
-			app.Sign.Key = cast.ToString(value)
+			app.Sign.Key = v.(string)
 		case "sign_time_key":
-			app.Sign.TimeKey = cast.ToString(value)
+			app.Sign.TimeKey = v.(string)
 		case "sign_expiration":
-			app.Sign.Expiration = cast.ToInt64(value)
+			app.Sign.Expiration = int64(v.(float64))
 		case "session_key":
-			app.Session.Key = cast.ToString(value)
+			app.Session.Key = v.(string)
 		case "session_key_prefix":
-			app.Session.KeyPrefix = cast.ToString(value)
+			app.Session.KeyPrefix = v.(string)
 		case "session_expiration":
-			app.Session.Expiration = cast.ToInt64(value)
+			app.Session.Expiration = int64(v.(float64))
 		}
 	}
 	for _, opt := range options {

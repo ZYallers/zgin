@@ -5,8 +5,8 @@ import (
 	libJson "github.com/ZYallers/golib/utils/json"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"net/http"
+	"strconv"
 )
 
 type IController interface {
@@ -29,10 +29,12 @@ func (c *Controller) DumpRequest() string {
 // GetLoggedUserId 获取已登陆用户的ID
 func (c *Controller) GetLoggedUserId() int {
 	if data, ok := c.Ctx.Get(consts.SessDataKey); ok && data != nil {
-		vars := data.(map[string]interface{})
-		if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
-			if s, ok := userInfo["userid"].(string); ok && s != "" {
-				return cast.ToInt(s)
+		if vars, ok := data.(map[string]interface{}); ok {
+			if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
+				if s, ok := userInfo["userid"].(string); ok {
+					i, _ := strconv.Atoi(s)
+					return i
+				}
 			}
 		}
 	}
@@ -41,21 +43,21 @@ func (c *Controller) GetLoggedUserId() int {
 
 // Json 输出方法
 // args 三个参数: 第一个是code，第二个是msg，第三个是data
-func (c *Controller) Json(args ...interface{}) {
-	var result gin.H
-	switch len(args) {
+func (c *Controller) Json(a ...interface{}) {
+	var h gin.H
+	switch len(a) {
 	case 1:
-		result = gin.H{"code": cast.ToInt(args[0]), "msg": "ok", "data": nil}
+		h = gin.H{"code": a[0], "msg": "", "data": struct{}{}}
 	case 2:
-		result = gin.H{"code": cast.ToInt(args[0]), "msg": cast.ToString(args[1]), "data": nil}
+		h = gin.H{"code": a[0], "msg": a[1], "data": struct{}{}}
 	case 3:
-		result = gin.H{"code": cast.ToInt(args[0]), "msg": cast.ToString(args[1]), "data": args[2]}
+		h = gin.H{"code": a[0], "msg": a[1], "data": a[2]}
 	case 4:
-		result = gin.H{"code": cast.ToInt(args[0]), "msg": cast.ToString(args[1]), "data": args[2], "record": args[3]}
+		h = gin.H{"code": a[0], "msg": a[1], "data": a[2], "record": a[3]}
 	}
-	bte, err := libJson.Marshal(result)
+	bte, err := libJson.Marshal(h)
 	if err != nil {
-		bte = []byte(fmt.Sprintf(`{"code":%d,"msg":"%s"}`, http.StatusInternalServerError, cast.ToString(err)))
+		bte = []byte(fmt.Sprintf(`{"code":%d,"msg":"%v"}`, http.StatusInternalServerError, err))
 	}
 	c.Ctx.Abort()
 	c.Ctx.Status(http.StatusOK)
@@ -95,7 +97,8 @@ func (c *Controller) GetQueryByMethod(key, defaultValue string) string {
 // QueryPostNumber 从Query或PostForm中获取数字类型key值
 func (c *Controller) QueryPostNumber(key string, defaultValue ...int) int {
 	if s := c.GetQueryPostForm(key); s != "" {
-		return cast.ToInt(s)
+		i, _ := strconv.Atoi(s)
+		return i
 	}
 	if len(defaultValue) > 0 {
 		return defaultValue[0]

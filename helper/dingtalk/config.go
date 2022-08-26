@@ -3,7 +3,6 @@ package dingtalk
 import (
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/zgin/helper/config"
-	"github.com/spf13/cast"
 	"os"
 )
 
@@ -44,8 +43,8 @@ func getPublicIP() string {
 
 func getName() string {
 	if name == "" {
-		if val := config.AppValue("name"); val != nil {
-			name = cast.ToString(val)
+		if v := config.AppValue("name"); v != nil {
+			name = v.(string)
 		} else {
 			return "unknown"
 		}
@@ -55,8 +54,8 @@ func getName() string {
 
 func getHttpAddr() string {
 	if httpAddr == "" {
-		if val := config.AppValue("http_addr"); val != nil {
-			httpAddr = cast.ToString(val)
+		if v := config.AppValue("http_addr"); v != nil {
+			httpAddr = v.(string)
 		} else {
 			return "unknown"
 		}
@@ -66,8 +65,8 @@ func getHttpAddr() string {
 
 func getGracefulToken() string {
 	if gracefulToken == "" {
-		if val := config.AppValue("graceful_token"); val != nil {
-			gracefulToken = cast.ToString(val)
+		if v := config.AppValue("graceful_token"); v != nil {
+			gracefulToken = v.(string)
 		}
 	}
 	return gracefulToken
@@ -75,8 +74,8 @@ func getGracefulToken() string {
 
 func getErrorToken() string {
 	if errorToken == "" {
-		if val := config.AppValue("error_token"); val != nil {
-			errorToken = cast.ToString(val)
+		if v := config.AppValue("error_token"); v != nil {
+			errorToken = v.(string)
 		}
 	}
 	return errorToken

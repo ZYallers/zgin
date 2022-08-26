@@ -1,10 +1,10 @@
 package dingtalk
 
 import (
+	"fmt"
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"strings"
 	"time"
 )
@@ -26,7 +26,7 @@ func PushContextMessage(ctx *gin.Context, msg interface{}, reqStr string, stack 
 
 func PushMessage(token string, msg interface{}, options ...interface{}) {
 	defer func() { recover() }()
-	title := cast.ToString(msg)
+	title := fmt.Sprintf("%v", msg)
 	if token == "" || title == "" {
 		return
 	}

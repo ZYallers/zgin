@@ -4,7 +4,6 @@ import (
 	"github.com/ZYallers/zgin/helper/config"
 	"github.com/ZYallers/zgin/helper/dingtalk"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 )
 
 const tokenKey = "sql_token"
@@ -16,7 +15,7 @@ type Sender struct {
 func (s *Sender) sqlToken() string {
 	if s.token == "" {
 		if v := config.AppValue(tokenKey); v != nil {
-			s.token = cast.ToString(v)
+			s.token = v.(string)
 		}
 	}
 	return s.token

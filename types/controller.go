@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/ZYallers/golib/funcs/conv"
 	libJson "github.com/ZYallers/golib/utils/json"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
@@ -47,13 +48,13 @@ func (c *Controller) Json(a ...interface{}) {
 	var h gin.H
 	switch len(a) {
 	case 1:
-		h = gin.H{"code": a[0], "msg": "", "data": struct{}{}}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": "", "data": struct{}{}}
 	case 2:
-		h = gin.H{"code": a[0], "msg": a[1], "data": struct{}{}}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": struct{}{}}
 	case 3:
-		h = gin.H{"code": a[0], "msg": a[1], "data": a[2]}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": a[2]}
 	case 4:
-		h = gin.H{"code": a[0], "msg": a[1], "data": a[2], "record": a[3]}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": a[2], "record": a[3]}
 	}
 	bte, err := libJson.Marshal(h)
 	if err != nil {

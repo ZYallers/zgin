@@ -23,11 +23,17 @@ func (c *Controller) SetContext(ctx *gin.Context) {
 }
 
 func (c *Controller) DumpRequest() string {
+	if c.Ctx == nil {
+		return ""
+	}
 	s, _ := c.Ctx.Get(consts.ReqStrKey)
-	return s.(string)
+	return conv.ToString(s)
 }
 
 func (c *Controller) GetLoggedUserId() int {
+	if c.Ctx == nil {
+		return 0
+	}
 	if data, ok := c.Ctx.Get(consts.SessDataKey); ok && data != nil {
 		if vars, ok := data.(map[string]interface{}); ok {
 			if userInfo, ok := vars["userinfo"].(map[string]interface{}); ok {
@@ -42,6 +48,9 @@ func (c *Controller) GetLoggedUserId() int {
 }
 
 func (c *Controller) Json(a ...interface{}) {
+	if c.Ctx == nil {
+		panic("controller context nil pointer")
+	}
 	var h gin.H
 	switch len(a) {
 	case 1:
@@ -53,18 +62,21 @@ func (c *Controller) Json(a ...interface{}) {
 	case 4:
 		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": a[2], "record": a[3]}
 	}
-	bte, err := libJson.Marshal(h)
-	if err != nil {
-		s := fmt.Sprintf(`{"code":%d,"msg":"%v","data":{}}`, http.StatusInternalServerError, err)
-		bte = []byte(s)
-	}
-	c.Ctx.Abort()
 	c.Ctx.Status(http.StatusOK)
 	c.Ctx.Writer.Header().Set("Content-Type", "application/json;charset=utf-8")
-	_, _ = c.Ctx.Writer.Write(bte)
+	if bte, err := libJson.Marshal(h); err != nil {
+		s := fmt.Sprintf(`{"code":%d,"msg":"%v","data":{}}`, http.StatusInternalServerError, err)
+		_, _ = c.Ctx.Writer.WriteString(s)
+	} else {
+		_, _ = c.Ctx.Writer.Write(bte)
+	}
+	c.Ctx.Abort()
 }
 
 func (c *Controller) GetQueryPostForm(keys ...string) string {
+	if c.Ctx == nil {
+		return ""
+	}
 	if len(keys) == 0 {
 		return ""
 	}
@@ -81,6 +93,9 @@ func (c *Controller) GetQueryPostForm(keys ...string) string {
 }
 
 func (c *Controller) GetQueryByMethod(key, defaultValue string) string {
+	if c.Ctx == nil {
+		return ""
+	}
 	var query string
 	switch c.Ctx.Request.Method {
 	case http.MethodPost:
@@ -103,6 +118,9 @@ func (c *Controller) QueryPostNumber(key string, defaultValue ...int) int {
 }
 
 func (c *Controller) Query(keys ...string) string {
+	if c.Ctx == nil {
+		return ""
+	}
 	if len(keys) == 0 {
 		return ""
 	}
@@ -116,6 +134,9 @@ func (c *Controller) Query(keys ...string) string {
 }
 
 func (c *Controller) PostForm(keys ...string) string {
+	if c.Ctx == nil {
+		return ""
+	}
 	if len(keys) == 0 {
 		return ""
 	}

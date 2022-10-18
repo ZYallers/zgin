@@ -54,9 +54,9 @@ func (c *Controller) Json(a ...interface{}) {
 	var h gin.H
 	switch len(a) {
 	case 1:
-		h = gin.H{"code": conv.ToInt(a[0]), "msg": "", "data": struct{}{}}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": "", "data": nil}
 	case 2:
-		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": struct{}{}}
+		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": nil}
 	case 3:
 		h = gin.H{"code": conv.ToInt(a[0]), "msg": conv.ToString(a[1]), "data": a[2]}
 	case 4:
@@ -65,7 +65,7 @@ func (c *Controller) Json(a ...interface{}) {
 	c.Ctx.Status(http.StatusOK)
 	c.Ctx.Writer.Header().Set("Content-Type", "application/json;charset=utf-8")
 	if bte, err := libJson.Marshal(h); err != nil {
-		s := fmt.Sprintf(`{"code":%d,"msg":"%v","data":{}}`, http.StatusInternalServerError, err)
+		s := fmt.Sprintf(`{"code":%d,"msg":"%v","data":null}`, http.StatusInternalServerError, err)
 		_, _ = c.Ctx.Writer.WriteString(s)
 	} else {
 		_, _ = c.Ctx.Writer.Write(bte)

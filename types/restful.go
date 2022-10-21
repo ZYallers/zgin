@@ -43,10 +43,14 @@ func (h *RestHandler) GetHttps() map[string]byte {
 }
 
 func (h *RestHandler) CallMethod(ctx *gin.Context) {
-	v := reflect.ValueOf(h.Handler)
+	/*v := reflect.ValueOf(h.Handler)
 	ptr := reflect.New(v.Type().Elem())
 	ptr.Elem().Set(v.Elem())
 	ptr.Interface().(IController).SetContext(ctx)
 	//ptr.Elem().FieldByName("Ctx").Set(reflect.ValueOf(ctx))
+	ptr.MethodByName(h.Method).Call(nil)*/
+
+	ptr := reflect.New(reflect.ValueOf(h.Handler).Elem().Type())
+	ptr.Interface().(IController).SetContext(ctx)
 	ptr.MethodByName(h.Method).Call(nil)
 }

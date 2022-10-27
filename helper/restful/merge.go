@@ -1,41 +1,39 @@
 package restful
 
 import (
-	"fmt"
 	"github.com/ZYallers/zgin/types"
 	"reflect"
 	"strings"
 	"sync"
 )
 
-var mu sync.Mutex
+var mtx sync.Mutex
 
 func Merge(in ...types.Restful) types.Restful {
-	mu.Lock()
-	defer mu.Unlock()
+	mtx.Lock()
+	defer mtx.Unlock()
 	res := types.Restful{}
 	for _, restful := range in {
-		for path, restHandlers := range restful {
-			if val, exist := res[path]; exist {
-				panic(fmt.Errorf("restful path \"%s\" already exists: %+v", path, val))
+		for path, handlers := range restful {
+			if _, ok := res[path]; ok {
+				continue
 			}
-			for i, rh := range restHandlers {
-				if rh.Http == "" || rh.Handler == nil || rh.Method == "" {
-					panic(fmt.Errorf("restHandler attribute assignment is invalid: %+v", rh))
+			for i, hl := range handlers {
+				if hl.Http == "" || hl.Handler == nil || hl.Method == "" {
+					continue
 				}
-				hmdSplit := strings.Split(rh.Http, ",")
-				https := make(map[string]byte, len(hmdSplit))
-				for _, httpMethod := range hmdSplit {
-					https[strings.ToUpper(httpMethod)] = 1
+				if _, ok := reflect.ValueOf(hl.Handler).Type().MethodByName(hl.Method); !ok {
+					continue
 				}
-				rh.Https = https
-				handlerValueOf := reflect.ValueOf(rh.Handler)
-				if _, exist := handlerValueOf.Type().MethodByName(rh.Method); !exist {
-					panic(fmt.Errorf("restHandler.Method does not exist: %+v\n", rh))
+				httpSlice := strings.Split(hl.Http, ",")
+				httpMap := make(map[string]byte, len(httpSlice))
+				for _, httpMethod := range httpSlice {
+					httpMap[strings.ToUpper(httpMethod)] = 1
 				}
-				restHandlers[i] = rh
+				hl.Https = httpMap
+				handlers[i] = hl
 			}
-			res[path] = restHandlers
+			res[path] = handlers
 		}
 	}
 	return res

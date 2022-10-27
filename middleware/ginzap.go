@@ -6,6 +6,7 @@ import (
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/helper/dingtalk"
+	"github.com/ZYallers/zgin/helper/safe"
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,8 @@ import (
 	"strings"
 	"time"
 )
+
+const sendMaxTimeFormat = "%s take %s to response, exceeding the maximum %s limit"
 
 func WithZapRecovery() option.App {
 	return func(app *types.App) {
@@ -36,34 +39,38 @@ func WithZapLogger() option.App {
 // Requests without errors are logged using zap.Info().
 func LoggerWithZap(logMaxTime, sendMaxTime time.Duration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		//defer func(t time.Time) { fmt.Println("LoggerWithZap runtime:", time.Now().Sub(t)) }(time.Now())
 		start := time.Now()
 		ctx.Next()
-		go func(ctx *gin.Context, runtime, log, send time.Duration) {
-			if len(ctx.Errors) > 0 {
-				reqStr := ctx.GetString(consts.ReqStrKey)
-				for _, err := range ctx.Errors.Errors() {
-					logger.Use("context").Error(err)
-					dingtalk.PushContextMessage(ctx, err, reqStr, "", true)
-				}
-			}
-			if runtime >= log {
-				logger.Use("timeout").Info(ctx.Request.URL.Path,
-					zap.Duration("runtime", runtime),
-					zap.String("proto", ctx.Request.Proto),
-					zap.String("method", ctx.Request.Method),
-					zap.String("host", ctx.Request.Host),
-					zap.String("url", ctx.Request.URL.String()),
-					zap.String("query", ctx.Request.URL.RawQuery),
-					zap.String("clientIP", nets.ClientIP(ctx.ClientIP())),
-					zap.Any("header", ctx.Request.Header),
-					zap.String("request", ctx.GetString(consts.ReqStrKey)),
-				)
-			}
-			if runtime >= send {
-				msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit", ctx.Request.URL.Path, runtime, send)
-				dingtalk.PushContextMessage(ctx, msg, ctx.GetString(consts.ReqStrKey), "", false)
-			}
-		}(ctx.Copy(), time.Now().Sub(start), logMaxTime, sendMaxTime)
+		go logSend(ctx.Copy(), time.Now().Sub(start), logMaxTime, sendMaxTime)
+	}
+}
+
+func logSend(ctx *gin.Context, runtime, logTime, sendTime time.Duration) {
+	defer safe.Defer()
+	if len(ctx.Errors) > 0 {
+		reqStr := ctx.GetString(consts.ReqStrKey)
+		for _, err := range ctx.Errors.Errors() {
+			logger.Use("context").Error(err)
+			dingtalk.PushContextMessage(ctx, err, reqStr, "", true)
+		}
+	}
+	if runtime >= logTime {
+		logger.Use("timeout").Info(ctx.Request.URL.Path,
+			zap.Duration("runtime", runtime),
+			zap.String("proto", ctx.Request.Proto),
+			zap.String("method", ctx.Request.Method),
+			zap.String("host", ctx.Request.Host),
+			zap.String("url", ctx.Request.URL.String()),
+			zap.String("query", ctx.Request.URL.RawQuery),
+			zap.String("clientIP", nets.ClientIP(ctx.ClientIP())),
+			zap.Any("header", ctx.Request.Header),
+			zap.String("request", ctx.GetString(consts.ReqStrKey)),
+		)
+	}
+	if runtime >= sendTime {
+		msg := fmt.Sprintf(sendMaxTimeFormat, ctx.Request.URL.Path, runtime, sendTime)
+		dingtalk.PushContextMessage(ctx, msg, ctx.GetString(consts.ReqStrKey), "", false)
 	}
 }
 
@@ -72,6 +79,7 @@ func LoggerWithZap(logMaxTime, sendMaxTime time.Duration) gin.HandlerFunc {
 // All errors are logged using zap.Error().
 func RecoveryWithZap() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		//defer func(t time.Time) { fmt.Println("RecoveryWithZap runtime:", time.Now().Sub(t)) }(time.Now())
 		defer func() {
 			if err := recover(); err != nil {
 				// Check for a broken connection, as it is not really a condition that warrants a panic stack trace.
@@ -104,8 +112,7 @@ func RecoveryWithZap() gin.HandlerFunc {
 					data["request"] = reqStr
 					data["stack"] = strings.Split(stacks, "\n")
 				}
-				ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusInternalServerError,
-					"msg": "server internal error", "data": data})
+				AbortWithJson(ctx, http.StatusInternalServerError, "server internal error", data)
 			}
 		}()
 

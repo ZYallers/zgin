@@ -1,7 +1,6 @@
 package restful
 
 import (
-	"fmt"
 	"github.com/ZYallers/zgin/types"
 	"reflect"
 	"sort"
@@ -10,22 +9,21 @@ import (
 	"sync"
 )
 
-var mu2 sync.Mutex
+var rtx sync.Mutex
 
 func Register(des types.Restful, controllers ...types.IController) types.Restful {
-	mu2.Lock()
-	defer mu2.Unlock()
+	rtx.Lock()
+	defer rtx.Unlock()
 	res := types.Restful{}
 	for path, restHandlers := range des {
 		res[path] = restHandlers
 	}
 	for _, controller := range controllers {
-		controllerValueOf := reflect.ValueOf(controller)
-		controllerName := controllerValueOf.Elem().Type().Name()
-		if _, exist := controllerValueOf.Elem().Type().FieldByName("tag"); !exist {
+		controllerValue := reflect.ValueOf(controller)
+		if _, ok := controllerValue.Elem().Type().FieldByName("tag"); !ok {
 			continue
 		}
-		tagVal := controllerValueOf.Elem().FieldByName("tag")
+		tagVal := controllerValue.Elem().FieldByName("tag")
 		if tagVal.Kind() != reflect.Struct {
 			continue
 		}
@@ -34,45 +32,45 @@ func Register(des types.Restful, controllers ...types.IController) types.Restful
 				continue
 			}
 			methodName := tagVal.Type().Field(i).Name
-			fieldTagVal := tagVal.Type().Field(i).Tag
-			path := fieldTagVal.Get("path")
-			if path == "" {
-				panic(fmt.Errorf("restHandler.Path is empty: %s.%s\n", controllerName, methodName))
+			tagValue := tagVal.Type().Field(i).Tag
+			path := tagValue.Get("path")
+			https := tagValue.Get("http")
+			if path == "" || https == "" {
+				continue
 			}
-			htt := fieldTagVal.Get("http")
-			if htt == "" {
-				panic(fmt.Errorf("restHandler.Http is empty: %s.%s\n", controllerName, methodName))
+			if _, ok := controllerValue.Type().MethodByName(methodName); !ok {
+				continue
 			}
-			if _, exist := controllerValueOf.Type().MethodByName(methodName); !exist {
-				panic(fmt.Errorf("restHandler.Method does not exist: %s.%s\n", controllerName, methodName))
-			}
-			httSplit := strings.Split(htt, ",")
-			httpMap := make(map[string]byte, len(httSplit))
-			for _, httpMethod := range httSplit {
+			httpSlice := strings.Split(https, ",")
+			httpMap := make(map[string]byte, len(httpSlice))
+			for _, httpMethod := range httpSlice {
 				httpMap[strings.ToUpper(httpMethod)] = 1
 			}
-			resHandler := types.RestHandler{
+			restVer := types.RestVersion{Value: tagValue.Get("ver")}
+			if verLen := len(restVer.Value); verLen > 0 && restVer.Value[verLen-1:] == "+" {
+				restVer.Plus = true
+				restVer.Value = restVer.Value[0 : verLen-1]
+			}
+			resHandler := &types.RestHandler{
 				Path:    path,
-				Http:    htt,
+				Http:    https,
 				Https:   httpMap,
 				Handler: controller,
 				Method:  methodName,
-				Version: fieldTagVal.Get("ver"),
-				Signed:  fieldTagVal.Get("sign") == "on",
-				Logged:  fieldTagVal.Get("login") == "on",
+				Version: restVer,
+				Sign:    tagValue.Get("sign") == "on",
+				Login:   tagValue.Get("login") == "on",
 			}
-			if sortStr := fieldTagVal.Get("sort"); sortStr != "" {
-				if sortInt, err := strconv.Atoi(sortStr); err != nil {
-					panic(fmt.Errorf("restHandler sort is invalid: %s", sortStr))
-				} else {
-					resHandler.Sort = sortInt
+			if s := tagValue.Get("sort"); s != "" {
+				if val, err := strconv.Atoi(s); err == nil {
+					resHandler.Sort = val
 				}
 			}
 			res[path] = append(res[path], resHandler)
 			if len(res[path]) > 1 {
-				resHandlers := res[path]
-				sort.Sort(resHandlers)
-				res[path] = resHandlers
+				sort.Slice(res[path], func(i, j int) bool {
+					return res[path][i].Sort > res[path][j].Sort
+				})
 			}
 		}
 	}

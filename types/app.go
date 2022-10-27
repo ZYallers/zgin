@@ -10,40 +10,6 @@ import (
 	"time"
 )
 
-var (
-	DefaultApp = &App{
-		Name: "demo",
-		Mode: consts.DevMode,
-		Version: &Version{
-			Latest: "1.0.0",
-			Key:    "app_version",
-		},
-		Session: &Session{
-			Key:        "sess_token",
-			KeyPrefix:  "ci_session:",
-			Expiration: 6 * 30 * 86400,
-		},
-		Logger: &Logger{
-			Dir:         "apps/logs/go/demo",
-			LogTimeout:  3 * time.Second,
-			SendTimeout: 5 * time.Second,
-		},
-		Sign: &Sign{
-			SecretKey:  "1234!@#$",
-			Key:        "sess_token",
-			TimeKey:    "utime",
-			Dev:        "zgin-dev-sign",
-			Expiration: 60,
-		},
-		Server: &Server{
-			Addr:            "0.0.0.0:9999",
-			ReadTimeout:     10 * time.Second,
-			WriteTimeout:    15 * time.Second,
-			ShutDownTimeout: 15 * time.Second,
-		},
-	}
-)
-
 type Session struct {
 	Key        string
 	KeyPrefix  string
@@ -85,6 +51,38 @@ type App struct {
 	Server  *Server
 	Sign    *Sign
 	Session *Session
+}
+
+var DefaultApp = &App{
+	Name: "demo",
+	Mode: consts.DevMode,
+	Version: &Version{
+		Latest: "1.0.0",
+		Key:    "app_version",
+	},
+	Session: &Session{
+		Key:        "sess_token",
+		KeyPrefix:  "ci_session:",
+		Expiration: 6 * 30 * 86400,
+	},
+	Logger: &Logger{
+		Dir:         "apps/logs/go/demo",
+		LogTimeout:  10 * time.Second,
+		SendTimeout: 5 * time.Second,
+	},
+	Sign: &Sign{
+		SecretKey:  "1234!@#$",
+		Key:        "sess_token",
+		TimeKey:    "utime",
+		Dev:        "zgin-dev-sign",
+		Expiration: 60,
+	},
+	Server: &Server{
+		Addr:            "0.0.0.0:9999",
+		ReadTimeout:     10 * time.Second,
+		WriteTimeout:    15 * time.Second,
+		ShutDownTimeout: 15 * time.Second,
+	},
 }
 
 func (a *App) SetMode(mode string) *App {

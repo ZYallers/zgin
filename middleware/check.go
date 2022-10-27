@@ -1,159 +1,96 @@
 package middleware
 
 import (
-	"crypto/md5"
-	"encoding/base64"
-	"encoding/hex"
-	"github.com/ZYallers/golib/funcs/php"
-	"github.com/ZYallers/zgin/consts"
+	"fmt"
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"github.com/syyongx/php2go"
 	"net/http"
-	"strconv"
+	"reflect"
+	"runtime"
 	"strings"
-	"time"
 )
+
+const printRouteHandlerFormat = "[GIN-debug] %-6s %-25s --> %s (%d handlers)\n"
 
 func WithRestCheck(routes types.Restful) option.App {
 	return func(app *types.App) {
-		app.Server.Http.Handler.(*gin.Engine).Use(RestCheck(app, routes))
+		engine := app.Server.Http.Handler.(*gin.Engine)
+		for path, restHandlers := range routes {
+			https, sign, login := make(map[string]byte, 0), false, false
+			if len(restHandlers) == 1 {
+				handler := restHandlers[0]
+				https = handler.Https
+				sign = handler.Sign
+				login = handler.Login
+			} else {
+				for i := 0; i < len(restHandlers); i++ {
+					handler := restHandlers[i]
+					for method := range handler.Https {
+						if v, ok := https[method]; !ok {
+							https[method] = v
+						}
+					}
+					if handler.Sign {
+						sign = true
+					}
+					if handler.Login {
+						login = true
+					}
+				}
+			}
+			handlers := []gin.HandlerFunc{VersionCompare(app, restHandlers)}
+			if sign {
+				handlers = append(handlers, SignCheck(app))
+			}
+			handlers = append(handlers, ParseSession(app))
+			if login {
+				handlers = append(handlers, LoginCheck())
+			}
+			handlers = append(handlers, callRestHandler())
+			for method := range https {
+				switch strings.ToUpper(method) {
+				case http.MethodGet:
+					engine.GET(path, handlers...)
+					printRouteHandler(method, path, handlers)
+				case http.MethodPost:
+					engine.POST(path, handlers...)
+					printRouteHandler(method, path, handlers)
+				}
+			}
+		}
 	}
 }
 
-func RestCheck(c types.ICheck, routes types.Restful) gin.HandlerFunc {
+func printRouteHandler(method, path string, handlers []gin.HandlerFunc) {
+	if gin.IsDebugging() {
+		hns := make([]string, 0)
+		for _, hd := range handlers {
+			fn := handlerName(hd)
+			if fn != "" {
+				if fns := strings.Split(fn, "."); len(fns) > 2 {
+					fn = fns[len(fns)-2]
+				}
+				hns = append(hns, fn)
+			}
+		}
+		fmt.Printf(printRouteHandlerFormat, method, path, strings.Join(hns, "->"), len(handlers))
+	}
+}
+
+func handlerName(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
+func callRestHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var rest *types.RestHandler
-		if rest = versionCompare(ctx, c, routes); rest == nil {
-			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusNotFound, "msg": "page not found"})
-			return
-		}
-
-		// 签名验证
-		if rest.Signed && !signCheck(ctx, c) {
-			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusForbidden, "msg": "signature error"})
-			return
-		}
-
-		// 解析会话
-		if vars := parseSession(ctx, c); vars != nil {
-			ctx.Set(consts.SessDataKey, vars)
-		}
-
-		// 登录验证
-		if rest.Logged && !sessionCheck(ctx) {
-			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusUnauthorized, "msg": "please login first"})
-			return
-		}
-
-		// 调用对应控制器方法
-		rest.CallMethod(ctx)
-	}
-}
-
-func versionCompare(ctx *gin.Context, c types.ICheck, routes types.Restful) *types.RestHandler {
-	var handlers []types.RestHandler
-	if path := strings.Trim(ctx.Request.URL.Path, "/"); path == "" {
-		return nil
-	} else {
-		if hd, ok := routes[path]; !ok {
-			return nil
-		} else {
-			handlers = hd
-		}
-	}
-	ver, verKey := c.GetVersion()
-	version, httpMethod := queryPostForm(ctx, verKey, ver), ctx.Request.Method
-	for _, handler := range handlers {
-		hmd := handler.GetHttps()
-		if _, exist := hmd[httpMethod]; !exist {
-			return nil
-		}
-		if handler.Version == "" || version == handler.Version {
-			return &handler
-		}
-		if le := len(handler.Version); handler.Version[le-1:] == "+" {
-			vs := handler.Version[0 : le-1]
-			if version == vs {
-				return &handler
-			}
-			if php2go.VersionCompare(version, vs, ">") {
-				return &handler
+		//defer func(t time.Time) { fmt.Println("callRestHandler runtime:", time.Now().Sub(t)) }(time.Now())
+		if handler := GetRestHandler(ctx); handler != nil && handler.Handler != nil && handler.Method != "" {
+			ptr := reflect.New(reflect.ValueOf(handler.Handler).Elem().Type())
+			if controller, ok := ptr.Interface().(types.IController); ok && controller != nil {
+				controller.SetContext(ctx)
+				ptr.MethodByName(handler.Method).Call(nil)
 			}
 		}
 	}
-	return nil
-}
-
-func signCheck(ctx *gin.Context, c types.ICheck) bool {
-	secretKey, key, timeKey, dev, expiration := c.GetSign()
-	sign := queryPostForm(ctx, key)
-	if sign == "" {
-		return false
-	}
-	if gin.IsDebugging() && sign == dev {
-		return true
-	}
-	timestampStr := queryPostForm(ctx, timeKey)
-	if timestampStr == "" {
-		return false
-	}
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 0)
-	if err != nil {
-		return false
-	}
-	if time.Now().Unix()-timestamp > expiration {
-		return false
-	}
-	hash := md5.New()
-	hash.Write([]byte(timestampStr + secretKey))
-	md5str := hex.EncodeToString(hash.Sum(nil))
-	if sign == base64.StdEncoding.EncodeToString([]byte(md5str)) {
-		return true
-	}
-	return false
-}
-
-func parseSession(ctx *gin.Context, c types.ICheck) map[string]interface{} {
-	fn, key, prefix, _ := c.GetSession()
-	if fn == nil {
-		return nil
-	}
-	client := fn()
-	if client == nil {
-		return nil
-	}
-	token := queryPostForm(ctx, key)
-	if token == "" {
-		return nil
-	}
-	str, _ := client.Get(prefix + token).Result()
-	if str == "" {
-		return nil
-	}
-	return php.Unserialize(str)
-}
-
-func sessionCheck(ctx *gin.Context) bool {
-	if vars, ok := ctx.Get(consts.SessDataKey); ok && vars != nil {
-		return true
-	}
-	return false
-}
-
-func queryPostForm(ctx *gin.Context, keys ...string) string {
-	if len(keys) == 0 {
-		return ""
-	}
-	if val, ok := ctx.GetQuery(keys[0]); ok {
-		return val
-	}
-	if val, ok := ctx.GetPostForm(keys[0]); ok {
-		return val
-	}
-	if len(keys) == 2 {
-		return keys[1]
-	}
-	return ""
 }

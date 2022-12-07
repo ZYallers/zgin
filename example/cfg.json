@@ -1,9 +1,9 @@
 {
   "app": {
-    "name": "zgin",
+    "name": "example",
     "version": "1.0.0",
     "http_addr": "0.0.0.0:9999",
-    "log_dir": "/apps/logs/go/zgin",
+    "log_dir": "/apps/logs/go/example",
     "version_key": "app_version",
     "sign_key": "sign",
     "sign_time_key": "utime",

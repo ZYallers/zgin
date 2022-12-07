@@ -35,27 +35,23 @@ import (
 	"fmt"
 	"github.com/ZYallers/zgin"
 	"github.com/ZYallers/zgin/consts"
+	"github.com/ZYallers/zgin/example/route"
 	"github.com/ZYallers/zgin/handler"
 	"github.com/ZYallers/zgin/helper/config"
 	"github.com/ZYallers/zgin/middleware"
 	"github.com/ZYallers/zgin/option"
 	"github.com/gin-gonic/gin"
-	"demo/route"
 )
 
 func main() {
 	gin.DisableConsoleColor()
 	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {}
-
 	if err := config.ReadFile(); err != nil {
 		panic(fmt.Errorf("read config file error: %s", err))
 	}
-
 	app := zgin.New(
 		option.WithMode(consts.DevMode),
-		option.WithSignSecretKey("#$%1234"),
 	)
-
 	app.Run(
 		handler.WithNoRoute(),
 		handler.WithHealth(),
@@ -68,13 +64,14 @@ func main() {
 		middleware.WithRestCheck(route.Restful),
 	)
 }
+
 ```
 run main.go and visit http://0.0.0.0:9010/health (for windows "http://localhost:8080/health") on browser
 ```bash
 $ go run main.go
 ```
 
-## Zgin v1. stable
+## Zgin v1.stable
 - MVCS four-tier architecture support
 - Restful interface style support
 - API version control and permission custom configuration

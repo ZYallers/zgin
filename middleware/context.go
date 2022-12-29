@@ -38,8 +38,8 @@ func AbortWithJson(ctx *gin.Context, a ...interface{}) {
 	ctx.Header(consts.JsonContentTypeKey, consts.JsonContentTypeValue)
 	ctx.Status(http.StatusOK)
 	if bte, err := json.Marshal(h); err != nil {
-		ctx.Writer.WriteString(`{"code":500,"msg":"` + conv.ToString(err) + `"}`)
+		_, _ = ctx.Writer.WriteString(`{"code":500,"msg":"` + conv.ToString(err) + `"}`)
 	} else {
-		ctx.Writer.Write(bte)
+		_, _ = ctx.Writer.Write(bte)
 	}
 }

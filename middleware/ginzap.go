@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/ZYallers/golib/funcs/conv"
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
@@ -80,6 +81,12 @@ func logSend(ctx *gin.Context, runtime, logTime, sendTime time.Duration) {
 func RecoveryWithZap() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		//defer func(t time.Time) { fmt.Println("RecoveryWithZap runtime:", time.Now().Sub(t)) }(time.Now())
+		// SetPanicOnFault 控制程序在意外（非零）地址出现故障时运行时的行为
+		// 此类故障通常是由运行时内存损坏等错误引起的，因此默认响应是使程序崩溃
+		// 在不太严重的情况下，使用内存映射文件或不安全的内存操作的程序可能会导致非空地址的错误
+		// 允许此类程序请求运行时仅触发恐慌，而不是崩溃
+		// 仅适用于当前 goroutine。它返回之前的设置。
+		defer debug.SetPanicOnFault(debug.SetPanicOnFault(true))
 		defer func() {
 			if err := recover(); err != nil {
 				// Check for a broken connection, as it is not really a condition that warrants a panic stack trace.
@@ -93,12 +100,13 @@ func RecoveryWithZap() gin.HandlerFunc {
 					}
 				}
 
-				errMsg := fmt.Sprintf("recovery from panic: %v", err)
+				errs := conv.ToString(err)
+				msg := "recovery from panic: " + errs
 				reqStr := ctx.GetString(consts.ReqStrKey)
 				stacks := string(debug.Stack())
 
-				dingtalk.PushContextMessage(ctx, errMsg, reqStr, stacks, true)
-				logger.Use("recover").Error(errMsg, zap.String("request", reqStr), zap.String("stack", stacks))
+				dingtalk.PushContextMessage(ctx, msg, reqStr, stacks, true)
+				logger.Use("recover").Error(msg, zap.String("request", reqStr), zap.String("stack", stacks))
 
 				if brokenPipe {
 					// If the connection is dead, we can't write a status to it.
@@ -107,12 +115,8 @@ func RecoveryWithZap() gin.HandlerFunc {
 					return
 				}
 
-				data := gin.H{"error": err}
-				if gin.IsDebugging() {
-					data["request"] = reqStr
-					data["stack"] = strings.Split(stacks, "\n")
-				}
-				AbortWithJson(ctx, http.StatusInternalServerError, "server internal error", data)
+				AbortWithJson(ctx, http.StatusInternalServerError, "server internal error",
+					gin.H{"error": errs, "request": reqStr, "stack": strings.Split(stacks, "\n")})
 			}
 		}()
 

@@ -51,9 +51,6 @@ func (c *Controller) GetLoggedUserId() int {
 }
 
 func (c *Controller) Json(a ...interface{}) {
-	if c.ctx == nil {
-		panic("controller context nil pointer")
-	}
 	var h gin.H
 	switch len(a) {
 	case 1:
@@ -70,9 +67,9 @@ func (c *Controller) Json(a ...interface{}) {
 	c.ctx.Header(consts.JsonContentTypeKey, consts.JsonContentTypeValue)
 	c.ctx.Status(http.StatusOK)
 	if bte, err := json.Marshal(h); err != nil {
-		c.ctx.Writer.WriteString(`{"code":500,"msg":"` + conv.ToString(err) + `"}`)
+		_, _ = c.ctx.Writer.WriteString(`{"code":500,"msg":"` + conv.ToString(err) + `"}`)
 	} else {
-		c.ctx.Writer.Write(bte)
+		_, _ = c.ctx.Writer.Write(bte)
 	}
 }
 

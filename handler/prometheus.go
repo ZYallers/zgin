@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"os"
+	"strings"
+	"sync"
+
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"os"
-	"strings"
-	"sync"
 )
 
 var (

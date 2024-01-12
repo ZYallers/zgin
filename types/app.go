@@ -1,13 +1,14 @@
 package types
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/helper/grace"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-	"net/http"
-	"time"
 )
 
 type Session struct {

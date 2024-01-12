@@ -1,12 +1,13 @@
 package restful
 
 import (
-	"github.com/ZYallers/zgin/types"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/ZYallers/zgin/types"
 )
 
 var rtx sync.Mutex

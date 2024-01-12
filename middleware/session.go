@@ -1,11 +1,12 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/ZYallers/golib/funcs/php"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func ParseSession(check types.ICheck) gin.HandlerFunc {

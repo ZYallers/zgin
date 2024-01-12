@@ -2,10 +2,11 @@ package safe
 
 import (
 	"fmt"
+	"runtime/debug"
+
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/zgin/helper/dingtalk"
 	"go.uber.org/zap"
-	"runtime/debug"
 )
 
 func Defer() {

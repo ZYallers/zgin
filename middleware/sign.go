@@ -4,12 +4,13 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	"github.com/ZYallers/zgin/types"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/ZYallers/zgin/types"
+	"github.com/gin-gonic/gin"
 )
 
 func SignCheck(check types.ICheck) gin.HandlerFunc {

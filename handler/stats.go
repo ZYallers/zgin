@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"math/rand"
+	"strconv"
+	"time"
+
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/arl/statsviz"
 	"github.com/gin-gonic/gin"
-	"math/rand"
-	"strconv"
-	"time"
 )
 
 func WithStats(acts gin.Accounts) option.App {

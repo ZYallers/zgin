@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
-	"github.com/ZYallers/zgin/option"
-	"github.com/ZYallers/zgin/types"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
+	"github.com/gin-gonic/gin"
 )
 
 var (

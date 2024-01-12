@@ -1,12 +1,13 @@
 package types
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/ZYallers/golib/funcs/conv"
 	"github.com/ZYallers/golib/utils/json"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 type IController interface {
@@ -25,12 +26,26 @@ func (c *Controller) GetContext() *gin.Context {
 	return c.ctx
 }
 
+func (c *Controller) Context(ctx ...*gin.Context) *gin.Context {
+	if len(ctx) > 0 {
+		c.ctx = ctx[0]
+	}
+	return c.ctx
+}
+
 func (c *Controller) DumpRequest() string {
 	if c.ctx == nil {
 		return ""
 	}
 	s, _ := c.ctx.Get(consts.ReqStrKey)
 	return conv.ToString(s)
+}
+
+func (c *Controller) TraceId() string {
+	if c.ctx == nil {
+		return ""
+	}
+	return c.ctx.GetString("Trace-Id")
 }
 
 func (c *Controller) GetLoggedUserId() int {

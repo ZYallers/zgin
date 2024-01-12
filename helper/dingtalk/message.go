@@ -2,19 +2,13 @@ package dingtalk
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
 	"github.com/gin-gonic/gin"
-	"strings"
-	"time"
 )
-
-const (
-	timeout = 3 * time.Second
-	prefix  = "https://oapi.dingtalk.com/robot/send?access_token="
-)
-
-var headers = map[string]string{"Content-Type": "application/json;charset=utf-8"}
 
 func PushSimpleMessage(msg interface{}, isAtAll bool) {
 	PushMessage(getGracefulToken(), msg, isAtAll)
@@ -26,7 +20,7 @@ func PushContextMessage(ctx *gin.Context, msg interface{}, reqStr string, stack 
 
 func PushMessage(token string, msg interface{}, options ...interface{}) {
 	defer func() { recover() }()
-	title := fmt.Sprintf("%v", msg)
+	title := fmt.Sprint(msg)
 	if token == "" || title == "" {
 		return
 	}
@@ -66,5 +60,6 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
 	}
-	_, _ = curl.NewRequest(prefix + token).SetHeaders(headers).SetTimeOut(timeout).SetPostData(data).Post()
+	_, _ = curl.NewRequest("https://oapi.dingtalk.com/robot/send?access_token=" + token).
+		SetContentType("application/json").SetTimeOut(3 * time.Second).SetPostData(data).Post()
 }

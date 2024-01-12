@@ -6,15 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const tokenKey = "sql_token"
-
 type Sender struct {
 	token string
 }
 
 func (s *Sender) sqlToken() string {
 	if s.token == "" {
-		if v := config.AppValue(tokenKey); v != nil {
+		if v := config.AppValue("sql_token"); v != nil {
 			s.token = v.(string)
 		}
 	}

@@ -2,13 +2,14 @@ package handler
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	"github.com/ZYallers/golib/funcs/files"
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 func WithSwagger() option.App {

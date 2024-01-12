@@ -2,13 +2,14 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/ZYallers/zgin/option"
-	"github.com/ZYallers/zgin/types"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/ZYallers/zgin/option"
+	"github.com/ZYallers/zgin/types"
+	"github.com/gin-gonic/gin"
 )
 
 const printRouteHandlerFormat = "[GIN-debug] %-6s %-25s --> %s (%d handlers)\n"

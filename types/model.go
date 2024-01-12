@@ -1,12 +1,13 @@
 package types
 
 import (
+	"time"
+
 	"github.com/ZYallers/golib/utils/logger"
 	"github.com/ZYallers/golib/utils/mysql"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-	"time"
 )
 
 type Model struct {
@@ -15,7 +16,7 @@ type Model struct {
 
 func (m *Model) Config(db string, options ...interface{}) func() *gorm.Config {
 	logLevel := gormLogger.Warn
-	slowThreshold := 200 * time.Millisecond
+	slowThreshold := 500 * time.Millisecond
 	ol := len(options)
 	if ol == 0 && gin.IsDebugging() {
 		logLevel = gormLogger.Info

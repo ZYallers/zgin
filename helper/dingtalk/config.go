@@ -1,9 +1,10 @@
 package dingtalk
 
 import (
+	"os"
+
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/zgin/helper/config"
-	"os"
 )
 
 var systemIP, publicIP, hostName, name, httpAddr, gracefulToken, errorToken string

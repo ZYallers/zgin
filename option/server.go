@@ -1,8 +1,9 @@
 package option
 
 import (
-	"github.com/ZYallers/zgin/types"
 	"time"
+
+	"github.com/ZYallers/zgin/types"
 )
 
 func WithServerAddr(addr string) App {

@@ -1,11 +1,12 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/ZYallers/zgin/consts"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
 	"github.com/syyongx/php2go"
-	"net/http"
 )
 
 func VersionCompare(check types.ICheck, handlers types.RestHandlers) gin.HandlerFunc {

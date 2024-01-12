@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"net/http"
+	"net/http/pprof"
+
 	"github.com/ZYallers/zgin/option"
 	"github.com/ZYallers/zgin/types"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"net/http/pprof"
 )
 
 const (

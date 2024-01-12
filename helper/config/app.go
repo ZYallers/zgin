@@ -1,11 +1,12 @@
 package config
 
 import (
-	"github.com/spf13/viper"
 	"path"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/spf13/viper"
 )
 
 var (

@@ -12,10 +12,4 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-vendor/
-
-# Go module
-go.sum
-
-# Other
-*.log
+vendor

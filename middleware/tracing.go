@@ -23,7 +23,7 @@ func WithOpenTracing() option.App {
 			goId := goid.GetString()
 			traceId := ctx.GetHeader(trace.IdKey)
 			if traceId == "" {
-				traceId = trace.GenTraceId()
+				traceId = trace.NewTraceId()
 			}
 			trace.SetTraceId(goId, traceId)
 			ctx.Set(trace.IdKey, traceId)

@@ -103,9 +103,11 @@ func logSend(ctx *gin.Context, runtime, logMaxTime, sendMaxTime time.Duration) {
 	defer safe.Defer()
 	if len(ctx.Errors) > 0 {
 		reqStr := ctx.GetString(consts.ReqStrKey)
-		for _, err := range ctx.Errors.Errors() {
-			logger.Use("context").Error(err)
-			dingtalk.PushContextMessage(ctx, err, reqStr, "", true)
+		for i, err := range ctx.Errors.Errors() {
+			if ctx.Errors[i].Type != gin.ErrorTypeBind {
+				logger.Use("context").Error(err)
+				dingtalk.PushContextMessage(ctx, err, reqStr, "", true)
+			}
 		}
 	}
 	if logMaxTime > 0 && runtime >= logMaxTime {

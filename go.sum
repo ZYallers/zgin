@@ -22,8 +22,8 @@ github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMx
 github.com/VictoriaMetrics/fastcache v1.12.2 h1:N0y9ASrJ0F6h0QaC3o6uJb3NIZ9VKLjCM7NQbSmF7WI=
 github.com/VictoriaMetrics/fastcache v1.12.2/go.mod h1:AmC+Nzz1+3G2eCPapF6UcsnkThDcMsQicp4xDukwJYI=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
-github.com/ZYallers/golib v1.3.28 h1:ENRfEh+e/HS8j7frrlxZUSjNNUNMx5pX6ATTMt/4xnw=
-github.com/ZYallers/golib v1.3.28/go.mod h1:bh+bXEQzouJQ+c0hZRa8eeh/EkxPlRJHzTsW0GV5qf8=
+github.com/ZYallers/golib v1.3.30 h1:CzAzIQwXlLht0cVGpB33ksE17tJwivc9kLMJ7WU/j6U=
+github.com/ZYallers/golib v1.3.30/go.mod h1:bh+bXEQzouJQ+c0hZRa8eeh/EkxPlRJHzTsW0GV5qf8=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

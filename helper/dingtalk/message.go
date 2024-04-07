@@ -7,6 +7,7 @@ import (
 
 	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
+	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,11 +30,11 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 		"Mode: " + gin.Mode(),
 		"Listen: " + getHttpAddr(),
 		"HostName: " + getHostName(),
-		"Time: " + time.Now().Format("2006/01/02 15:04:05.000"),
+		"Time: " + time.Now().Format(consts.LogTimeFormat),
 		"SystemIP: " + getSystemIP(),
 		"PublicIP: " + getPublicIP(),
 	}
-	ol := len(options)
+	var ol = len(options)
 	var isAtAll bool
 	if ol > 0 && !gin.IsDebugging() {
 		if val, ok := options[0].(bool); ok {
@@ -57,9 +58,12 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 	}
 	data := map[string]interface{}{
 		"msgtype": "text",
-		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 		"at":      map[string]interface{}{"isAtAll": isAtAll},
+		"text":    map[string]string{"content": strings.Join(text, "\n") + "\n"},
 	}
 	_, _ = curl.NewRequest("https://oapi.dingtalk.com/robot/send?access_token=" + token).
-		SetContentType("application/json").SetTimeOut(3 * time.Second).SetPostData(data).Post()
+		SetContentType(consts.JsonContentTypeValue).
+		SetTimeOut(3 * time.Second).
+		SetPostData(data).
+		Post()
 }

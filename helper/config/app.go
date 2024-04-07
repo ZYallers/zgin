@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	cfg     map[string]interface{}
-	cfgOnce sync.Once
+	singleton sync.Once
+	cfg       map[string]interface{}
 )
 
 func ReadFile(args ...string) error {
@@ -37,9 +37,7 @@ func ReadFile(args ...string) error {
 }
 
 func AllSettings() map[string]interface{} {
-	cfgOnce.Do(func() {
-		cfg = viper.AllSettings()
-	})
+	singleton.Do(func() { cfg = viper.AllSettings() })
 	return cfg
 }
 

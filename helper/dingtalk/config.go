@@ -7,7 +7,15 @@ import (
 	"github.com/ZYallers/zgin/helper/config"
 )
 
-var systemIP, publicIP, hostName, name, httpAddr, gracefulToken, errorToken string
+var (
+	systemIP      string
+	publicIP      string
+	hostName      string
+	name          string
+	httpAddr      string
+	gracefulToken string
+	errorToken    string
+)
 
 func getHostName() string {
 	if hostName == "" {

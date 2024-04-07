@@ -5,7 +5,11 @@
     "http_addr": "0.0.0.0:9999",
     "log_dir": "/apps/logs/go/zgin",
     "trace_log_dir": "/apps/logs/go/trace",
-    "trace_exclude_routes": ["health","metrics","swag/json"],
+    "trace_exclude_routes": [
+      "health",
+      "metrics",
+      "swag/json"
+    ],
     "version_key": "app_version",
     "sign_key": "sign",
     "sign_time_key": "utime",

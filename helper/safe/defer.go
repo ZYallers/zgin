@@ -14,8 +14,15 @@ func Defer() {
 	if r == nil {
 		return
 	}
-	err := fmt.Sprintf("%v", r)
+
+	// 尝试将r转换为error，以获得更好的错误信息
+	var err error
+	if e, ok := r.(error); ok {
+		err = e
+	} else {
+		err = fmt.Errorf("%v", r)
+	}
 	stack := string(debug.Stack())
-	logger.Use("panic").Error(err, zap.String("debug_stack", stack))
+	logger.Use("panic").Error(err.Error(), zap.String("debug_stack", stack))
 	dingtalk.PushSimpleMessage(fmt.Sprintf("recovery from panic:\n%s\n%s", err, stack), true)
 }

@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	once    sync.Once
-	prom    = promhttp.Handler()
-	appInfo = prometheus.NewCounterVec(
+	promSingleton sync.Once
+	prom          = promhttp.Handler()
+	appInfo       = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "go_app_info",
 			Help: "now running go app information.",
@@ -33,7 +33,7 @@ func WithPrometheus() option.App {
 }
 
 func PrometheusHandler(ctx *gin.Context, name string) {
-	once.Do(func() {
+	promSingleton.Do(func() {
 		prometheus.MustRegister(appInfo)
 		appInfo.WithLabelValues(name, strings.Join(os.Args, " ")).Inc()
 	})

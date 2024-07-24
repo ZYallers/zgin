@@ -15,7 +15,7 @@ func WithNoRoute() option.App {
 			ctx.Abort()
 			ctx.Header(consts.JsonContentTypeKey, consts.JsonContentTypeValue)
 			ctx.Status(http.StatusOK)
-			ctx.Writer.WriteString(consts.PageNotFoundContent)
+			_, _ = ctx.Writer.WriteString(consts.PageNotFoundContent)
 		})
 	}
 }

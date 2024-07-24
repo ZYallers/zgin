@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"github.com/ZYallers/zgin/consts"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -38,7 +39,7 @@ func WithExpVar() option.App {
 
 // ExpHandler 返回当前运行信息
 func ExpHandler(ctx *gin.Context) {
-	ctx.Writer.Header().Set("Content-Type", "application/json;charset=utf-8")
+	ctx.Writer.Header().Set(consts.JsonContentTypeKey, consts.JsonContentTypeValue)
 	first := true
 	report := func(key string, value interface{}) {
 		if !first {

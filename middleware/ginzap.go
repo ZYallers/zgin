@@ -124,7 +124,8 @@ func logSend(ctx *gin.Context, runtime, logMaxTime, sendMaxTime time.Duration) {
 		)
 	}
 	if sendMaxTime > 0 && runtime >= sendMaxTime {
-		msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit", ctx.Request.URL.Path, runtime, sendMaxTime)
+		msg := fmt.Sprintf("%s take %s to response, exceeding the maximum %s limit",
+			ctx.Request.URL.Path, runtime, sendMaxTime)
 		dingtalk.PushContextMessage(ctx, msg, ctx.GetString(consts.ReqStrKey), "", false)
 	}
 }

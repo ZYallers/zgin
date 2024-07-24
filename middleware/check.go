@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const printRouteHandlerFormat = "[GIN-debug] %-6s %-25s --> %s (%d handlers)\n"
+const printRouteHandlerFormat = "[REST] %-6s %-25s --> %s (%d handlers)\n"
 
 func WithRestCheck(routes types.Restful) option.App {
 	return func(app *types.App) {

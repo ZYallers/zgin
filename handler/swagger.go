@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/ZYallers/zgin/consts"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,6 +37,6 @@ func SwagHandler(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusOK, gin.H{"code": http.StatusInternalServerError, "msg": err.Error()})
 		return
 	}
-	ctx.Header("Content-Type", "application/json;charset=utf-8")
+	ctx.Header(consts.JsonContentTypeKey, consts.JsonContentTypeValue)
 	ctx.String(http.StatusOK, string(fd))
 }

@@ -2,13 +2,18 @@ package dingtalk
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/ZYallers/golib/funcs/nets"
 	"github.com/ZYallers/golib/utils/curl"
 	"github.com/ZYallers/zgin/consts"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	// 连续换行符
+	continuousLineBreaksRegExp, _ = regexp.Compile(`\s{2,}`)
 )
 
 func PushSimpleMessage(msg interface{}, isAtAll bool) {
@@ -32,28 +37,33 @@ func PushMessage(token string, msg interface{}, options ...interface{}) {
 		"HostName: " + getHostName(),
 		"Time: " + time.Now().Format(consts.LogTimeFormat),
 		"SystemIP: " + getSystemIP(),
-		"PublicIP: " + getPublicIP(),
 	}
-	var ol = len(options)
-	var isAtAll bool
-	if ol > 0 && !gin.IsDebugging() {
+	var (
+		optLen  = len(options)
+		isAtAll bool
+	)
+	if optLen > 0 && !gin.IsDebugging() {
 		if val, ok := options[0].(bool); ok {
 			isAtAll = val
 		}
 	}
-	if ol > 1 {
+	if optLen > 1 {
 		if ctx, ok := options[1].(*gin.Context); ok && ctx != nil {
-			text = append(text, "ClientIP: "+nets.ClientIP(ctx.ClientIP()), "Url: "+"https://"+ctx.Request.Host+ctx.Request.URL.String())
+			text = append(text,
+				"ClientIP: "+ctx.ClientIP(),
+				"Url: "+ctx.Request.Host+ctx.Request.URL.Path,
+			)
 		}
 	}
-	if ol > 2 {
-		if rs, ok := options[2].(string); ok && rs != "" {
-			text = append(text, "\nRequest:\n"+strings.ReplaceAll(rs, "\n", ""))
+	if optLen > 2 {
+		if s, ok := options[2].(string); ok && s != "" {
+			s := continuousLineBreaksRegExp.ReplaceAllString(s, "\n")
+			text = append(text, "\nRequest:\n"+strings.TrimSpace(s))
 		}
 	}
-	if ol > 3 {
-		if stack, ok := options[3].(string); ok && stack != "" {
-			text = append(text, "\nStack:\n"+stack)
+	if optLen > 3 {
+		if s, ok := options[3].(string); ok && s != "" {
+			text = append(text, "\nStack:\n"+strings.TrimSpace(s))
 		}
 	}
 	data := map[string]interface{}{

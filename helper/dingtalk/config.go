@@ -9,7 +9,6 @@ import (
 
 var (
 	systemIP      string
-	publicIP      string
 	hostName      string
 	name          string
 	httpAddr      string
@@ -37,17 +36,6 @@ func getSystemIP() string {
 		}
 	}
 	return systemIP
-}
-
-func getPublicIP() string {
-	if publicIP == "" {
-		if s := nets.PublicIP(); s != "" {
-			publicIP = s
-		} else {
-			return "unknown"
-		}
-	}
-	return publicIP
 }
 
 func getName() string {
